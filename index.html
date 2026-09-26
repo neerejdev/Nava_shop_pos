@@ -1,89 +1,62 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#6200ee">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ShopPOS</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
-    .container { display: flex; flex-direction: column; height: 100vh; }
-    .header { background: #6200ee; color: white; padding: 16px; display: flex; gap: 12px; }
-    .header h1 { font-size: 24px; font-weight: bold; }
-    .content { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
-    input { flex: 1; padding: 12px 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; }
+    .header { background: #6200ee; color: white; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; }
+    .container { max-width: 600px; margin: 0 auto; padding: 10px; }
+    input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; }
     input:focus { outline: none; border-color: #6200ee; }
-    .suggestions { background: white; border-radius: 8px; max-height: 250px; overflow-y: auto; }
-    .suggestion-item { padding: 12px 16px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; }
-    .suggestion-item:hover { background: #f9f9f9; }
-    .product-name { font-weight: 500; font-size: 14px; }
-    .product-code { font-size: 12px; color: #999; }
-    .product-price { font-weight: bold; color: #6200ee; }
-    .selected-product { background: #f0f4ff; padding: 16px; border-radius: 8px; display: none; }
-    .selected-product.active { display: block; }
-    .qty-control { display: flex; gap: 8px; margin: 12px 0; }
-    .qty-btn { width: 40px; height: 40px; background: #6200ee; color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
-    button { padding: 12px 16px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; width: 100%; margin-bottom: 8px; }
+    .suggestions { background: white; border: 1px solid #ddd; border-radius: 5px; max-height: 300px; overflow-y: auto; display: none; }
+    .suggestion { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; }
+    .suggestion:hover { background: #f0f0f0; }
+    .sugg-name { flex: 1; }
+    .sugg-price { color: #6200ee; font-weight: bold; margin-left: 10px; }
+    .selected { background: #f0f4ff; padding: 15px; border-radius: 5px; margin: 15px 0; display: none; }
+    .selected.show { display: block; }
+    .qty-group { display: flex; gap: 5px; margin: 10px 0; }
+    .qty-btn { width: 40px; height: 40px; background: #6200ee; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 18px; }
+    .qty-input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
+    button { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
     .btn-primary { background: #6200ee; color: white; }
-    .btn-secondary { background: white; border: 1px solid #ddd; }
-    .cart-item { background: white; border: 1px solid #eee; padding: 12px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; }
-    .remove-btn { background: none; border: none; color: #ff6b6b; cursor: pointer; }
-    .total-card { background: #f0f4ff; padding: 16px; border-radius: 8px; margin-top: 12px; }
-    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
-    .modal.active { display: flex; }
-    .modal-content { background: white; border-radius: 12px; padding: 24px; max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto; }
+    .btn-secondary { background: white; border: 2px solid #ddd; }
+    .cart { background: white; padding: 15px; border-radius: 5px; margin: 15px 0; }
+    .cart-item { background: #f9f9f9; padding: 10px; margin: 5px 0; border-radius: 3px; display: flex; justify-content: space-between; }
+    .cart-remove { background: none; border: none; color: red; cursor: pointer; font-size: 18px; }
+    .total { font-size: 18px; font-weight: bold; color: #6200ee; text-align: right; margin: 10px 0; }
   </style>
 </head>
 <body>
+  <div class="header">🛍️ ShopPOS</div>
   <div class="container">
-    <div class="header">
-      <div style="font-size: 24px;">🛍️</div>
-      <h1>ShopPOS</h1>
-    </div>
-    <div class="content" id="content">
-      <input type="text" id="search" placeholder="Search products...">
-      <div class="suggestions" id="suggestions" style="display:none;"></div>
-      <div id="selectedProduct" class="selected-product">
-        <h3>Selected</h3>
-        <div id="selectedName"></div>
-        <div id="selectedCode"></div>
-        <div id="selectedPrice" style="font-size:20px;color:#6200ee;margin:12px 0;"></div>
-        <div class="qty-control">
-          <button class="qty-btn" onclick="decreaseQty()">−</button>
-          <input type="number" id="quantity" value="1" min="0.1" step="0.1">
-          <button class="qty-btn" onclick="increaseQty()">+</button>
-        </div>
-        <button class="btn-primary" onclick="addToCart()">Add to Cart</button>
-        <button class="btn-secondary" onclick="clearSelection()">Cancel</button>
-      </div>
-      <div id="cartSection" style="display:none;">
-        <div style="display:flex;justify-content:space-between;">
-          <h3>Cart</h3>
-          <button class="remove-btn" onclick="clearCart()">Clear</button>
-        </div>
-        <div id="cartItems"></div>
-        <div class="total-card">
-          <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
-            <span>Total: ₹<span id="total">0.00</span></span>
-          </div>
-          <button class="btn-primary" onclick="checkout()">Checkout</button>
-        </div>
-      </div>
-      <div id="emptyState" style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#999;">
-        <div style="font-size:64px;margin-bottom:12px;">🛒</div>
-        <div>Search for products</div>
-      </div>
-    </div>
-  </div>
+    <input type="text" id="search" placeholder="Search product...">
+    <div class="suggestions" id="suggestions"></div>
 
-  <div class="modal" id="checkoutModal">
-    <div class="modal-content">
-      <h2>Order Summary</h2>
-      <div id="orderItems" style="margin:20px 0;"></div>
-      <h3 style="text-align:right;">Total: ₹<span id="checkoutTotal">0.00</span></h3>
-      <button class="btn-primary" onclick="confirmOrder()">Confirm</button>
-      <button class="btn-secondary" onclick="closeCheckout()">Back</button>
+    <div class="selected" id="selected">
+      <div id="selectedName" style="font-size: 18px; font-weight: bold;"></div>
+      <div id="selectedCode" style="color: #666; margin: 5px 0;"></div>
+      <div id="selectedPrice" style="font-size: 20px; color: #6200ee; font-weight: bold; margin: 10px 0;"></div>
+      <div class="qty-group">
+        <button class="qty-btn" onclick="decreaseQty()">−</button>
+        <input type="number" class="qty-input" id="quantity" value="1" min="0.1" step="0.1">
+        <button class="qty-btn" onclick="increaseQty()">+</button>
+      </div>
+      <button class="btn-primary" onclick="addToCart()">Add to Cart</button>
+      <button class="btn-secondary" onclick="clearSelection()">Cancel</button>
+    </div>
+
+    <div class="cart" id="cartDiv" style="display: none;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+        <strong>Cart Items:</strong>
+        <button class="cart-remove" onclick="clearCart()">Clear</button>
+      </div>
+      <div id="cartItems"></div>
+      <div class="total">Total: ₹<span id="total">0.00</span></div>
+      <button class="btn-primary" onclick="checkout()">Checkout</button>
     </div>
   </div>
 
@@ -92,109 +65,128 @@
     let cart = [];
     let selectedProduct = null;
 
-    function searchProducts(query) {
-      if (!query.trim()) {
-        document.getElementById('suggestions').style.display = 'none';
+    const searchInput = document.getElementById('search');
+    const suggestionsDiv = document.getElementById('suggestions');
+
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      
+      if (!query) {
+        suggestionsDiv.style.display = 'none';
         return;
       }
-      const q = query.toLowerCase();
-      const results = PRODUCTS_DATA.filter(p => 
-        p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q)
-      ).slice(0, 15);
+
+      const results = PRODUCTS_DATA.filter(p => {
+        const name = p.name.toLowerCase();
+        const code = p.code.toLowerCase();
+        
+        // Search any word in product name or the code
+        const words = name.split(' ');
+        for (let word of words) {
+          if (word.includes(query)) return true;
+        }
+        if (code.includes(query)) return true;
+        return false;
+      }).slice(0, 15);
 
       if (results.length === 0) {
-        document.getElementById('suggestions').style.display = 'none';
+        suggestionsDiv.style.display = 'none';
         return;
       }
-      const html = results.map(p => `<div class="suggestion-item" onclick="selectProduct('${p.code}')"><div><div class="product-name">${p.name}</div><div class="product-code">${p.code}</div></div><div class="product-price">₹${p.price.toFixed(2)}</div></div>`).join('');
-      document.getElementById('suggestions').innerHTML = html;
-      document.getElementById('suggestions').style.display = 'block';
-    }
+
+      suggestionsDiv.innerHTML = results.map(p => `
+        <div class="suggestion" onclick="selectProduct('${p.code}')">
+          <div class="sugg-name">${p.name}<br><small style="color: #999;">${p.code}</small></div>
+          <div class="sugg-price">₹${p.price.toFixed(2)}</div>
+        </div>
+      `).join('');
+      suggestionsDiv.style.display = 'block';
+    });
 
     function selectProduct(code) {
-      const product = PRODUCTS_DATA.find(p => p.code === code);
-      if (!product) return;
-      selectedProduct = product;
-      document.getElementById('search').value = '';
-      document.getElementById('suggestions').style.display = 'none';
+      selectedProduct = PRODUCTS_DATA.find(p => p.code === code);
+      if (!selectedProduct) return;
+
+      searchInput.value = '';
+      suggestionsDiv.style.display = 'none';
       document.getElementById('quantity').value = '1';
-      document.getElementById('selectedName').textContent = product.name;
-      document.getElementById('selectedCode').textContent = 'Code: ' + product.code;
-      document.getElementById('selectedPrice').textContent = '₹' + product.price.toFixed(2);
-      document.getElementById('selectedProduct').classList.add('active');
-      updateUI();
+
+      document.getElementById('selectedName').textContent = selectedProduct.name;
+      document.getElementById('selectedCode').textContent = `Code: ${selectedProduct.code}`;
+      document.getElementById('selectedPrice').textContent = `₹${selectedProduct.price.toFixed(2)}`;
+      document.getElementById('selected').classList.add('show');
     }
 
     function clearSelection() {
       selectedProduct = null;
-      document.getElementById('selectedProduct').classList.remove('active');
-      updateUI();
+      document.getElementById('selected').classList.remove('show');
     }
 
     function increaseQty() {
-      document.getElementById('quantity').value = (parseFloat(document.getElementById('quantity').value) + 1).toFixed(1);
+      const qty = document.getElementById('quantity');
+      qty.value = (parseFloat(qty.value) + 1).toFixed(1);
     }
 
     function decreaseQty() {
-      const val = Math.max(0.1, parseFloat(document.getElementById('quantity').value) - 1);
-      document.getElementById('quantity').value = val.toFixed(1);
+      const qty = document.getElementById('quantity');
+      qty.value = Math.max(0.1, parseFloat(qty.value) - 1).toFixed(1);
     }
 
     function addToCart() {
       if (!selectedProduct) return;
       const qty = parseFloat(document.getElementById('quantity').value);
       if (qty <= 0) return;
-      cart.push({id: Date.now(), ...selectedProduct, quantity: qty, subtotal: selectedProduct.price * qty});
+
+      cart.push({
+        id: Date.now(),
+        ...selectedProduct,
+        qty: qty,
+        subtotal: selectedProduct.price * qty
+      });
+
       clearSelection();
-      updateUI();
+      updateCart();
     }
 
     function removeFromCart(id) {
       cart = cart.filter(item => item.id !== id);
-      updateUI();
+      updateCart();
     }
 
     function clearCart() {
-      if (!confirm('Clear cart?')) return;
-      cart = [];
-      updateUI();
+      if (confirm('Clear cart?')) {
+        cart = [];
+        updateCart();
+      }
     }
 
-    function updateUI() {
-      const hasSelected = selectedProduct !== null;
-      const hasCart = cart.length > 0;
-      document.getElementById('selectedProduct').style.display = hasSelected ? 'block' : 'none';
-      document.getElementById('cartSection').style.display = hasCart ? 'block' : 'none';
-      document.getElementById('emptyState').style.display = (!hasSelected && !hasCart) ? 'flex' : 'none';
-
-      if (hasCart) {
-        document.getElementById('cartItems').innerHTML = cart.map(item => `<div class="cart-item"><div><div>${item.name}</div><div style="font-size:12px;color:#999;">${item.quantity.toFixed(1)} × ₹${item.price.toFixed(2)}</div></div><div><div>₹${item.subtotal.toFixed(2)}</div><button class="remove-btn" onclick="removeFromCart(${item.id})">✕</button></div></div>`).join('');
-        const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
-        document.getElementById('total').textContent = total.toFixed(2);
+    function updateCart() {
+      if (cart.length === 0) {
+        document.getElementById('cartDiv').style.display = 'none';
+        return;
       }
+
+      document.getElementById('cartDiv').style.display = 'block';
+      document.getElementById('cartItems').innerHTML = cart.map(item => `
+        <div class="cart-item">
+          <div>
+            <strong>${item.name}</strong><br>
+            <small>${item.qty.toFixed(1)} × ₹${item.price.toFixed(2)} = ₹${item.subtotal.toFixed(2)}</small>
+          </div>
+          <button class="cart-remove" onclick="removeFromCart(${item.id})">✕</button>
+        </div>
+      `).join('');
+
+      const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
+      document.getElementById('total').textContent = total.toFixed(2);
     }
 
     function checkout() {
       const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
-      document.getElementById('orderItems').innerHTML = cart.map(item => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>${item.name}</span><span>₹${item.subtotal.toFixed(2)}</span></div>`).join('');
-      document.getElementById('checkoutTotal').textContent = total.toFixed(2);
-      document.getElementById('checkoutModal').classList.add('active');
-    }
-
-    function closeCheckout() {
-      document.getElementById('checkoutModal').classList.remove('active');
-    }
-
-    function confirmOrder() {
-      const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
       alert('✅ Order Confirmed!\n\nTotal: ₹' + total.toFixed(2));
       cart = [];
-      closeCheckout();
-      updateUI();
+      updateCart();
     }
-
-    document.getElementById('search').addEventListener('input', (e) => searchProducts(e.target.value));
-    updateUI();
   </script>
 </body>
 </html>
