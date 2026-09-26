@@ -3,27 +3,22 @@
     "name": "ShopPOS",
     "slug": "shoppos",
     "version": "1.0.0",
-    "sdkVersion": "57.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": ["**/*"],
-    "newArchEnabled": false,
-    "androidStatusBar": {
-      "barStyle": "light-content",
-      "backgroundColor": "#6200ee"
-    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "android": {
       "package": "com.shoppos.app",
       "versionCode": 1,
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#6200ee"
-      },
-      "permissions": ["INTERNET"]
+      "permissions": [
+        "INTERNET"
+      ]
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "extra": {
+      "eas": {
+        "projectId": "aa024dd7-6115-4a3d-986d-76cbaa253562"
+      }
     }
   }
 }
