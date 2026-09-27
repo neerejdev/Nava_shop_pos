@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Nava Shop POS - Price Check & Scanner</title>
   <!-- html5-qrcode scanner library -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -518,8 +521,8 @@
     <div class="subtitle">Instant Price Checker & Barcode Scanner</div>
     <div class="header-pills">
       <span class="pill" id="currencyToggle" title="Click to change currency">💷 Currency: £</span>
-      <span class="pill" id="syncStatusPill" onclick="openSyncModal()" title="Click to configure Google Sheet">📊 Sheet Sync: Local</span>
-      <span class="pill" id="quickSyncBtn" onclick="refreshGoogleSheetSync()" style="display: none;" title="Refresh prices from Google Sheet">🔄 Sync</span>
+      <span class="pill pill-live" id="syncStatusPill" onclick="openSyncModal()" title="Google Sheet is connected">🟢 Live (27,050)</span>
+      <span class="pill" id="quickSyncBtn" onclick="refreshGoogleSheetSync()" title="Refresh prices from Google Sheet">🔄 Sync</span>
     </div>
   </header>
 
