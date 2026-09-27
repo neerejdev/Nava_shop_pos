@@ -377,8 +377,111 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      margin: 16px 0;
+      margin: 14px 0;
     }
+
+    /* Pricing Mode Toggle & Weight Input */
+    .pricing-mode-toggle {
+      display: flex;
+      gap: 6px;
+      background: #f3f4f6;
+      padding: 4px;
+      border-radius: 10px;
+      margin: 12px 0;
+    }
+    .mode-tab {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-tab.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .weight-group {
+      margin: 14px 0;
+    }
+    .weight-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+    .weight-tip {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: normal;
+    }
+    .weight-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .weight-input {
+      width: 100%;
+      padding: 12px 50px 12px 14px;
+      font-size: 24px;
+      font-weight: 800;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-main);
+      background: #fafafa;
+    }
+    .weight-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: white;
+    }
+    .weight-unit-tag {
+      position: absolute;
+      right: 14px;
+      font-weight: 800;
+      color: var(--primary);
+      font-size: 15px;
+      pointer-events: none;
+    }
+    .quick-weights {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .quick-w-btn {
+      flex: 1;
+      min-width: 50px;
+      padding: 7px 10px;
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #374151;
+    }
+    .quick-w-btn:active { background: #e5e7eb; }
+    .btn-clear-w { color: var(--danger); background: #fef2f2; border-color: #fecaca; }
+    .calc-summary {
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin: 14px 0;
+      text-align: center;
+    }
+    .calc-label { font-size: 11px; color: #4338ca; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .calc-amount { font-size: 28px; font-weight: 800; color: #3730a3; margin: 2px 0; }
+    .calc-breakdown { font-size: 13px; color: #4f46e5; }
     .qty-btn {
       width: 44px;
       height: 44px;
@@ -560,13 +663,55 @@
       <div class="product-name" id="cardName"></div>
       <div class="product-price-box">
         <div class="product-price" id="cardPrice">£0.00</div>
-        <div class="product-price-unit">Unit Price</div>
+        <div class="product-price-unit" id="cardPriceUnit">Unit Price</div>
       </div>
 
-      <div class="qty-group">
-        <button class="qty-btn" onclick="decreaseQty()">−</button>
-        <input type="number" class="qty-input" id="cardQty" value="1" min="0.1" step="1">
-        <button class="qty-btn" onclick="increaseQty()">+</button>
+      <!-- Pricing Mode Toggle (Weight vs Pieces) -->
+      <div class="pricing-mode-toggle" id="pricingModeToggle">
+        <button type="button" class="mode-tab" id="tabWeight" onclick="setPricingMode('weight')">⚖️ By Weight (kg / g)</button>
+        <button type="button" class="mode-tab active" id="tabUnits" onclick="setPricingMode('units')">🔢 By Pieces (qty)</button>
+      </div>
+
+      <!-- Weight Input Group (for produce / vegetables) -->
+      <div class="weight-group" id="weightGroup" style="display: none;">
+        <div class="weight-label">
+          <span>⚖️ Enter Weight</span>
+          <span class="weight-tip">e.g. <code>1</code>, <code>2</code>, or <code>.563</code> for 563g</span>
+        </div>
+        <div class="weight-input-wrapper">
+          <input 
+            type="text" 
+            inputmode="decimal" 
+            id="cardWeight" 
+            class="weight-input" 
+            placeholder=".563 or 1.2" 
+            autocomplete="off"
+            oninput="onWeightInputChange()"
+          >
+          <span class="weight-unit-tag">KG</span>
+        </div>
+        <div class="quick-weights">
+          <button type="button" class="quick-w-btn" onclick="setQuickWeight(0.250)">250g</button>
+          <button type="button" class="quick-w-btn" onclick="setQuickWeight(0.500)">500g</button>
+          <button type="button" class="quick-w-btn" onclick="setQuickWeight(0.750)">750g</button>
+          <button type="button" class="quick-w-btn" onclick="setQuickWeight(1.000)">1 kg</button>
+          <button type="button" class="quick-w-btn" onclick="setQuickWeight(2.000)">2 kg</button>
+          <button type="button" class="quick-w-btn btn-clear-w" onclick="clearWeightInput()">Clear</button>
+        </div>
+      </div>
+
+      <!-- Quantity Input Group (for standard piece items) -->
+      <div class="qty-group" id="qtyGroup">
+        <button class="qty-btn" type="button" onclick="decreaseQty()">−</button>
+        <input type="number" class="qty-input" id="cardQty" value="1" min="1" step="1" oninput="calculateCurrentTotal()">
+        <button class="qty-btn" type="button" onclick="increaseQty()">+</button>
+      </div>
+
+      <!-- Calculated Total & Breakdown Summary -->
+      <div class="calc-summary" id="calcSummary">
+        <div class="calc-label">Total Item Price</div>
+        <div class="calc-amount" id="calcTotalPrice">£0.00</div>
+        <div class="calc-breakdown" id="calcBreakdown">1 × £0.00</div>
       </div>
 
       <div class="btn-row">
@@ -698,6 +843,9 @@
           }
         }
 
+        // Precompute compact name without non-alphanumeric (e.g. "icecreamvanilla500ml")
+        p._compact = (name + ' ' + code).replace(/[^a-z0-9]/g, '');
+
         // Precompute flexible search index: expand units (1.5L -> " 1.5 l 1.5l ") and normalize symbols
         const expandedUnits = name.replace(/(\d+(?:\.\d+)?)\s*(kg|g|l|ml|cl|ltr|litre|gm|oz|pk|pcs|s)\b/gi, (m, num, unit) => {
           return ' ' + num + ' ' + unit + ' ' + num + unit + ' ';
@@ -717,7 +865,16 @@
     const cardCode = document.getElementById('cardCode');
     const cardBarcode = document.getElementById('cardBarcode');
     const cardPrice = document.getElementById('cardPrice');
+    const cardPriceUnit = document.getElementById('cardPriceUnit');
+    const tabWeight = document.getElementById('tabWeight');
+    const tabUnits = document.getElementById('tabUnits');
+    const weightGroup = document.getElementById('weightGroup');
+    const qtyGroup = document.getElementById('qtyGroup');
     const cardQty = document.getElementById('cardQty');
+    const cardWeight = document.getElementById('cardWeight');
+    const calcSummary = document.getElementById('calcSummary');
+    const calcTotalPrice = document.getElementById('calcTotalPrice');
+    const calcBreakdown = document.getElementById('calcBreakdown');
     const scannerModal = document.getElementById('scannerModal');
     const syncModal = document.getElementById('syncModal');
     const toastEl = document.getElementById('toast');
@@ -726,6 +883,8 @@
     const quickSyncBtn = document.getElementById('quickSyncBtn');
     const sheetUrlInput = document.getElementById('sheetUrlInput');
     const disconnectSheetBtn = document.getElementById('disconnectSheetBtn');
+
+    let currentPricingMode = 'units'; // 'weight' or 'units'
 
     // Init
     rebuildIndexes();
@@ -814,7 +973,8 @@
         return;
       }
 
-      // 3. Search query across name, code, barcode with intelligent relevance ranking
+      // 3. Search query across name, code, barcode with compound word flexibility & intelligent ranking
+      const cleanQueryCompact = cleanQuery.replace(/[^a-z0-9]/g, '');
       const queryWords = cleanQuery.split(/\s+/).filter(Boolean);
       const scoredResults = [];
 
@@ -825,30 +985,50 @@
         const bc = p.barcode ? String(p.barcode) : '';
         const searchable = p._search || (name + ' ' + code + ' ' + bc);
 
-        // Every typed word must match somewhere in the product (in any order)
+        // Every query word must match somewhere:
+        // EITHER in normal searchable string
+        // OR as a compound word in p._compact (e.g. "icecream" matches "ice cream")
         let allWordsMatch = true;
+        let compoundBonus = 0;
+
         for (let w = 0; w < queryWords.length; w++) {
-          if (!searchable.includes(queryWords[w])) {
+          const qw = queryWords[w];
+          const qwCompact = qw.replace(/[^a-z0-9]/g, '');
+
+          if (searchable.includes(qw)) {
+            continue;
+          } else if (qwCompact.length >= 3 && p._compact && p._compact.includes(qwCompact)) {
+            compoundBonus += 300;
+          } else {
             allWordsMatch = false;
             break;
           }
         }
+
+        // Also check if the entire multi-word query merged without spaces matches p._compact
+        if (!allWordsMatch && cleanQueryCompact.length >= 4 && p._compact && p._compact.includes(cleanQueryCompact)) {
+          allWordsMatch = true;
+          compoundBonus += 400;
+        }
+
         if (!allWordsMatch) continue;
 
         // Calculate relevance score
-        let score = 0;
+        let score = compoundBonus;
 
         // Exact match on full name
         if (name === cleanQuery) {
           score += 3000;
-        }
-        // Name starts with the exact query
-        else if (name.startsWith(cleanQuery)) {
+        } else if (p._compact === cleanQueryCompact) {
+          score += 2800;
+        } else if (name.startsWith(cleanQuery)) {
           score += 1500;
-        }
-        // Name contains the exact full query phrase
-        else if (name.includes(cleanQuery)) {
+        } else if (p._compact.startsWith(cleanQueryCompact)) {
+          score += 1200;
+        } else if (name.includes(cleanQuery)) {
           score += 600;
+        } else if (p._compact.includes(cleanQueryCompact)) {
+          score += 500;
         }
 
         // Word boundary matching (e.g. "ripe" matches whole word "RIPE")
@@ -903,9 +1083,29 @@
       if (!text) return '';
       let escaped = escapeHtml(text);
       if (!words || words.length === 0) return escaped;
+
+      const termsToHighlight = new Set();
       for (let w of words) {
-        if (!w) continue;
-        const safeWord = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (!w || w.length < 2) continue;
+        termsToHighlight.add(w);
+      }
+
+      // Compound words support: if query word contains parts in text (e.g. text has "ice" & "cream" and query is "icecream")
+      const lowerText = text.toLowerCase();
+      for (let w of words) {
+        const wClean = w.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (wClean.length >= 4) {
+          const textTokens = lowerText.split(/[^a-z0-9]+/);
+          for (let token of textTokens) {
+            if (token.length >= 3 && wClean.includes(token)) {
+              termsToHighlight.add(token);
+            }
+          }
+        }
+      }
+
+      for (let term of termsToHighlight) {
+        const safeWord = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         try {
           const re = new RegExp('(' + safeWord + ')', 'gi');
           escaped = escaped.replace(re, '<mark style="background: #fef08a; padding: 1px 3px; border-radius: 3px; font-weight: 700;">$1</mark>');
@@ -959,13 +1159,107 @@
              null;
     }
 
+    // ==========================================
+    // WEIGHTED PRODUCE & QUANTITY PRICING
+    // ==========================================
+    function isWeightedProduct(p) {
+      if (!p) return false;
+      const code = String(p.code || '').toUpperCase();
+      const name = (p.name || '').toLowerCase();
+      if (code.startsWith('MANUAL-')) return true;
+      if (/\bper\s*kg\b|\/\s*kg\b|\b\/kilo\b|\bper\s*kilo\b|\bweigh\b|\bloose\b/i.test(name)) return true;
+      if (!p.barcode && /\b(plantain|doodhi|karela|okra|drumstick|tindoori|aubergine|banana|mango|beans|spinach|mutton|chilli|ginger|garlic)\b/i.test(name)) return true;
+      return false;
+    }
+
+    function setPricingMode(mode) {
+      currentPricingMode = mode;
+      if (mode === 'weight') {
+        tabWeight.classList.add('active');
+        tabUnits.classList.remove('active');
+        weightGroup.style.display = 'block';
+        qtyGroup.style.display = 'none';
+        if (cardPriceUnit) cardPriceUnit.textContent = 'Price per KG';
+        setTimeout(() => cardWeight.focus(), 60);
+      } else {
+        tabUnits.classList.add('active');
+        tabWeight.classList.remove('active');
+        weightGroup.style.display = 'none';
+        qtyGroup.style.display = 'flex';
+        if (cardPriceUnit) cardPriceUnit.textContent = 'Unit Price';
+        if (!cardQty.value || parseFloat(cardQty.value) <= 0) {
+          cardQty.value = '1';
+        }
+      }
+      calculateCurrentTotal();
+    }
+
+    function onWeightInputChange() {
+      let val = cardWeight.value;
+      // Allow digits and at most one decimal point (e.g. .563 or 1.25)
+      val = val.replace(/[^0-9.]/g, '');
+      const parts = val.split('.');
+      if (parts.length > 2) {
+        val = parts[0] + '.' + parts.slice(1).join('');
+      }
+      // Restrict decimal portion to max 3 digits (grams precision)
+      if (parts.length === 2 && parts[1].length > 3) {
+        val = parts[0] + '.' + parts[1].slice(0, 3);
+      }
+      cardWeight.value = val;
+      calculateCurrentTotal();
+    }
+
+    function setQuickWeight(w) {
+      cardWeight.value = Number(w).toFixed(3);
+      calculateCurrentTotal();
+    }
+
+    function clearWeightInput() {
+      cardWeight.value = '';
+      calculateCurrentTotal();
+      cardWeight.focus();
+    }
+
+    function calculateCurrentTotal() {
+      if (!selectedProduct) return;
+      const price = Number(selectedProduct.price) || 0;
+
+      if (currentPricingMode === 'weight') {
+        const rawVal = cardWeight.value.trim();
+        const weight = parseFloat(rawVal);
+        if (!rawVal || isNaN(weight) || weight <= 0) {
+          calcTotalPrice.textContent = formatPrice(0);
+          calcBreakdown.textContent = `0.000 kg × ${formatPrice(price)}/kg`;
+          return;
+        }
+        const total = Math.round(weight * price * 100) / 100;
+        calcTotalPrice.textContent = formatPrice(total);
+        calcBreakdown.textContent = `${weight.toFixed(3)} kg × ${formatPrice(price)}/kg = ${formatPrice(total)}`;
+      } else {
+        const qty = parseFloat(cardQty.value) || 1;
+        const total = Math.round(qty * price * 100) / 100;
+        calcTotalPrice.textContent = formatPrice(total);
+        calcBreakdown.textContent = `${qty} × ${formatPrice(price)} = ${formatPrice(total)}`;
+      }
+    }
+
+    function increaseQty() {
+      cardQty.value = (parseFloat(cardQty.value || 0) + 1).toFixed(0);
+      calculateCurrentTotal();
+    }
+
+    function decreaseQty() {
+      cardQty.value = Math.max(1, parseFloat(cardQty.value || 1) - 1).toFixed(0);
+      calculateCurrentTotal();
+    }
+
     // Select & Display Product
     function selectProduct(product) {
       selectedProduct = product;
       searchInput.value = '';
       clearSearchBtn.style.display = 'none';
       suggestionsDiv.style.display = 'none';
-      cardQty.value = '1';
 
       cardName.textContent = product.name;
       cardCode.textContent = 'Code: ' + product.code;
@@ -976,6 +1270,17 @@
         cardBarcode.style.display = 'none';
       }
       cardPrice.textContent = formatPrice(product.price);
+
+      const isWeight = isWeightedProduct(product);
+      if (isWeight) {
+        cardWeight.value = '';
+        setPricingMode('weight');
+      } else {
+        cardQty.value = '1';
+        setPricingMode('units');
+      }
+
+      calculateCurrentTotal();
       productCard.classList.add('show');
       productCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -985,33 +1290,62 @@
       productCard.classList.remove('show');
     }
 
-    function increaseQty() {
-      cardQty.value = (parseFloat(cardQty.value || 0) + 1).toFixed(0);
-    }
-
-    function decreaseQty() {
-      cardQty.value = Math.max(1, parseFloat(cardQty.value || 1) - 1).toFixed(0);
-    }
+    // Support Enter key inside weight or quantity input to immediately add to cart
+    cardWeight.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        addToCart();
+      }
+    });
+    cardQty.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        addToCart();
+      }
+    });
 
     function addToCart() {
       if (!selectedProduct) return;
-      const qty = parseFloat(cardQty.value);
-      if (qty <= 0 || isNaN(qty)) return;
 
-      const existing = cart.find(item => item.code === selectedProduct.code);
-      if (existing) {
-        existing.qty += qty;
-        existing.subtotal = existing.qty * existing.price;
-      } else {
+      if (currentPricingMode === 'weight') {
+        const rawVal = cardWeight.value.trim();
+        const weight = parseFloat(rawVal);
+        if (!rawVal || isNaN(weight) || weight <= 0) {
+          showToast('⚠️ Please enter weight (e.g. .563 or 1.2)', 'error');
+          cardWeight.focus();
+          return;
+        }
+        const subtotal = Math.round(weight * selectedProduct.price * 100) / 100;
         cart.push({
-          id: Date.now(),
+          id: Date.now() + Math.random(),
           ...selectedProduct,
-          qty: qty,
-          subtotal: selectedProduct.price * qty
+          isWeight: true,
+          weight: weight,
+          qty: 1,
+          subtotal: subtotal
         });
+        showToast(`✓ Added ${selectedProduct.name} (${weight.toFixed(3)} kg)`, 'success');
+      } else {
+        const qty = parseFloat(cardQty.value);
+        if (qty <= 0 || isNaN(qty)) {
+          showToast('⚠️ Please enter a valid quantity', 'error');
+          cardQty.focus();
+          return;
+        }
+        const existing = cart.find(item => !item.isWeight && item.code === selectedProduct.code);
+        if (existing) {
+          existing.qty += qty;
+          existing.subtotal = Math.round(existing.qty * existing.price * 100) / 100;
+        } else {
+          cart.push({
+            id: Date.now() + Math.random(),
+            ...selectedProduct,
+            isWeight: false,
+            qty: qty,
+            subtotal: Math.round(selectedProduct.price * qty * 100) / 100
+          });
+        }
+        showToast(`✓ Added ${selectedProduct.name}`, 'success');
       }
 
-      showToast(`Added ${selectedProduct.name} to cart`, 'success');
       clearSelection();
       updateCart();
     }
@@ -1049,14 +1383,19 @@
         <div class="cart-item">
           <div>
             <div class="cart-item-name">${escapeHtml(item.name)}</div>
-            <div class="cart-item-sub">${item.qty} × ${formatPrice(item.price)} = <strong>${formatPrice(item.subtotal)}</strong></div>
+            <div class="cart-item-sub">
+              ${item.isWeight 
+                ? `${Number(item.weight).toFixed(3)} kg × ${formatPrice(item.price)}/kg = <strong>${formatPrice(item.subtotal)}</strong>` 
+                : `${item.qty} × ${formatPrice(item.price)} = <strong>${formatPrice(item.subtotal)}</strong>`
+              }
+            </div>
           </div>
           <button class="cart-remove-btn" onclick="removeFromCart(${item.id})">✕</button>
         </div>
       `).join('');
 
       const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
-      cartTotal.textContent = formatPrice(total);
+      cartTotal.textContent = formatPrice(Math.round(total * 100) / 100);
     }
 
     function checkout() {
