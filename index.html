@@ -613,15 +613,263 @@
     }
     .toast.error { background: #b91c1c; }
     .toast.success { background: #047857; }
+
+    /* Header Row with Add Product Button */
+    .header-main-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+    }
+    .header-title-box {
+      text-align: center;
+      flex: 1;
+    }
+    .add-product-btn {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.22);
+      border: 1.5px solid rgba(255, 255, 255, 0.45);
+      border-radius: 50%;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      flex-shrink: 0;
+    }
+    .add-product-btn:hover {
+      background: rgba(255, 255, 255, 0.35);
+      transform: scale(1.06);
+    }
+    .add-product-btn:active {
+      transform: scale(0.94);
+    }
+
+    /* Add Product Modal Styles */
+    .modal-scrollable {
+      max-height: 92vh;
+      overflow-y: auto;
+    }
+    .form-section {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+    .form-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #374151;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .input-field-group {
+      margin-bottom: 10px;
+    }
+    .input-field-group:last-child {
+      margin-bottom: 0;
+    }
+    .input-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #4b5563;
+      margin-bottom: 4px;
+    }
+    .input-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+      transition: border 0.15s;
+    }
+    .input-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+    .input-control-code {
+      font-family: monospace;
+      font-weight: 700;
+      color: #4338ca;
+      background: #eef2ff;
+    }
+    .input-control-name {
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #1e1b4b;
+      background: #f8fafc;
+    }
+    .photo-capture-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .photo-snap-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 6px;
+      background: white;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: #4b5563;
+      text-align: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+    .photo-snap-btn:hover {
+      border-color: var(--primary);
+      background: #f5f3ff;
+      color: var(--primary);
+    }
+    .photo-snap-btn:active {
+      transform: scale(0.96);
+    }
+    .photo-snap-icon {
+      font-size: 22px;
+    }
+    .photo-tray {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 6px 2px 10px 2px;
+      margin-bottom: 8px;
+    }
+    .photo-thumb-card {
+      position: relative;
+      width: 76px;
+      height: 76px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .photo-thumb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .photo-thumb-badge {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      font-size: 9px;
+      text-align: center;
+      padding: 2px 0;
+      font-weight: 600;
+    }
+    .photo-thumb-del {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      background: rgba(239, 68, 68, 0.9);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .btn-ai-magic {
+      background: linear-gradient(135deg, #4f46e5, #9333ea);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+      transition: all 0.2s;
+    }
+    .btn-ai-magic:hover {
+      opacity: 0.95;
+    }
+    .btn-ai-magic:active {
+      transform: scale(0.98);
+    }
+    .ai-info-banner {
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.4;
+      margin-top: 10px;
+      display: none;
+    }
+    .ai-info-banner.warning {
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      display: block;
+    }
+    .ai-info-banner.success {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+      display: block;
+    }
+    .barcode-input-row {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-barcode-scan {
+      background: #10b981;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0 14px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>
-      🛍️ Nava Shop POS
-    </h1>
-    <div class="subtitle">Instant Price Checker & Barcode Scanner</div>
+    <div class="header-main-row">
+      <div style="width: 40px;"></div>
+      <div class="header-title-box">
+        <h1>🛍️ Nava Shop POS</h1>
+        <div class="subtitle">Instant Price Checker & Barcode Scanner</div>
+      </div>
+      <button class="add-product-btn" id="openAddProductBtn" onclick="openAddProductModal()" title="Add New Product to Shop">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      </button>
+    </div>
     <div class="header-pills">
       <span class="pill" id="currencyToggle" title="Click to change currency">💷 Currency: £</span>
       <span class="pill pill-live" id="syncStatusPill" onclick="openSyncModal()" title="Google Sheet is connected">🟢 Live (27,050)</span>
@@ -789,10 +1037,188 @@
           placeholder="https://docs.google.com/spreadsheets/d/1abc.../edit"
         >
 
+        <div style="margin-top: 6px; padding-top: 12px; border-top: 1px dashed var(--border); margin-bottom: 12px;">
+          <label style="font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 4px;">
+            Google Apps Script Webhook (For Auto-Save):
+          </label>
+          <input 
+            type="text" 
+            id="sheetWebhookInput" 
+            class="search-input" 
+            style="padding: 10px 12px; font-size: 13px; margin-bottom: 6px;" 
+            placeholder="https://script.google.com/macros/s/.../exec"
+          >
+          <details style="font-size: 12px; color: #4b5563; line-height: 1.4;">
+            <summary style="cursor: pointer; color: var(--primary); font-weight: 600;">How to get your free Webhook URL (2 mins)</summary>
+            <div style="background: #f3f4f6; padding: 8px; border-radius: 6px; margin-top: 6px; font-family: monospace; font-size: 11px;">
+              In your Sheet: Extensions &rarr; Apps Script &rarr; paste this:<br><br>
+              function doPost(e) {<br>
+              &nbsp;&nbsp;var s = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();<br>
+              &nbsp;&nbsp;var d = JSON.parse(e.postData.contents);<br>
+              &nbsp;&nbsp;s.appendRow([d.code, d.name, d.price, d.barcode]);<br>
+              &nbsp;&nbsp;return ContentService.createTextOutput('ok');<br>
+              }<br><br>
+              Click <b>Deploy &rarr; New Deployment &rarr; Web app</b> (Who has access: <b>Anyone</b>). Copy the URL here!
+            </div>
+          </details>
+        </div>
+
         <div style="display: flex; gap: 10px;">
           <button class="btn btn-primary" onclick="saveAndSyncGoogleSheet()">Save & Sync Now</button>
           <button class="btn btn-secondary" id="disconnectSheetBtn" onclick="disconnectGoogleSheet()" style="display: none;">Disconnect</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add New Product Modal -->
+  <div class="modal-overlay" id="addProductModal">
+    <div class="modal-card modal-scrollable">
+      <div class="modal-header">
+        <h3>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          Add New Product
+        </h3>
+        <button class="close-modal-btn" onclick="closeAddProductModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- Step 1: Scan Barcode (Optional for loose produce) -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <span>1. Product Barcode</span>
+            <span id="barcodeStatusTag" style="font-size: 11px; text-transform: none; color: #6b7280;">Optional for loose produce</span>
+          </div>
+          <div class="barcode-input-row">
+            <input 
+              type="text" 
+              id="newProdBarcode" 
+              class="input-control" 
+              placeholder="Scan or type barcode (e.g. 5000328...)"
+              oninput="onNewProdBarcodeChange()"
+            >
+            <button type="button" class="btn-barcode-scan" onclick="scanBarcodeForNewProduct()">
+              📷 Scan
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Multi-Photo Capture (Front, Back/Weight, Shelf Rack Price) -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <span>2. Photos & Shelf Tag</span>
+            <span style="font-size: 11px; text-transform: none; color: #4f46e5; cursor: pointer;" onclick="toggleApiKeyInput()">⚙️ AI Settings</span>
+          </div>
+          <p style="font-size: 12px; color: #6b7280; margin-bottom: 10px; line-height: 1.4;">
+            Walk up to the rack and snap 1–3 photos: the front, the weight/size on the back, and the shelf price tag!
+          </p>
+
+          <div class="photo-capture-grid">
+            <button type="button" class="photo-snap-btn" onclick="triggerPhotoCapture('front')">
+              <span class="photo-snap-icon">📦</span>
+              <span>1. Front</span>
+              <span style="font-size: 10px; color: #9ca3af;">Name & Brand</span>
+            </button>
+            <button type="button" class="photo-snap-btn" onclick="triggerPhotoCapture('weight')">
+              <span class="photo-snap-icon">⚖️</span>
+              <span>2. Weight/Back</span>
+              <span style="font-size: 10px; color: #9ca3af;">Size / Grams</span>
+            </button>
+            <button type="button" class="photo-snap-btn" onclick="triggerPhotoCapture('shelf')">
+              <span class="photo-snap-icon">🏷️</span>
+              <span>3. Shelf Tag</span>
+              <span style="font-size: 10px; color: #9ca3af;">Price on Rack</span>
+            </button>
+          </div>
+
+          <!-- Hidden Camera File Input -->
+          <input 
+            type="file" 
+            id="productPhotoInput" 
+            accept="image/*" 
+            capture="environment" 
+            style="display: none;" 
+            onchange="handlePhotoUpload(event)"
+          >
+
+          <!-- Captured Photo Thumbnails Tray -->
+          <div class="photo-tray" id="photoTray" style="display: none;"></div>
+
+          <!-- AI Magic Analyze Button -->
+          <button type="button" class="btn-ai-magic" id="analyzeAiBtn" onclick="analyzePhotosWithAI()" style="width: 100%;">
+            <span>✨ AI Extract Name, Weight & Shelf Price</span>
+          </button>
+
+          <!-- AI Key Input Section (Collapsible) -->
+          <div id="aiKeyBox" style="display: none; margin-top: 10px; background: white; padding: 10px; border-radius: 8px; border: 1px solid #c7d2fe;">
+            <label class="input-label" style="display: flex; justify-content: space-between;">
+              <span>Google Gemini API Key (Free)</span>
+              <a href="https://aistudio.google.com/apikey" target="_blank" style="color: #4f46e5; text-decoration: none;">Get Free Key ↗</a>
+            </label>
+            <div style="display: flex; gap: 6px; margin-top: 4px;">
+              <input type="password" id="geminiApiKeyInput" class="input-control" placeholder="AIzaSy..." style="font-size: 13px;">
+              <button type="button" class="btn btn-primary" style="padding: 8px 14px; min-width: auto; font-size: 13px;" onclick="saveGeminiApiKey()">Save</button>
+            </div>
+            <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Enables automatic multimodal photo recognition from multiple images in seconds.</div>
+          </div>
+
+          <!-- AI Notification Banner -->
+          <div class="ai-info-banner" id="aiInfoBanner"></div>
+        </div>
+
+        <!-- Step 3: Confirmation & Edit Details -->
+        <div class="form-section" style="background: white;">
+          <div class="form-section-title">
+            <span>3. Confirm Details</span>
+            <span style="font-size: 11px; text-transform: none; color: #10b981; font-weight: 600;">Standard Format</span>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <div class="input-field-group" style="flex: 1;">
+              <label class="input-label">Product Code (Auto)</label>
+              <input type="text" id="newProdCode" class="input-control input-control-code" placeholder="N0027119">
+            </div>
+            <div class="input-field-group" style="flex: 1;">
+              <label class="input-label">Price (£)</label>
+              <input type="number" step="0.01" min="0.01" id="newProdPrice" class="input-control" placeholder="1.99" style="font-size: 16px; font-weight: 700; color: #4f46e5;">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+            <div class="input-field-group" style="flex: 1;">
+              <label class="input-label">Brand / Company</label>
+              <input type="text" id="newProdBrand" class="input-control" placeholder="e.g. KTC, NATCO, WALKERS" oninput="updateFormattedNamePreview()">
+            </div>
+            <div class="input-field-group" style="width: 100px;">
+              <label class="input-label">Weight / Size</label>
+              <input type="text" id="newProdWeight" class="input-control" placeholder="e.g. 500G" oninput="updateFormattedNamePreview()">
+            </div>
+          </div>
+
+          <div class="input-field-group" style="margin-bottom: 10px;">
+            <label class="input-label">Product Name / Flavor</label>
+            <input type="text" id="newProdName" class="input-control" placeholder="e.g. CORN OIL or CHICK PEAS" oninput="updateFormattedNamePreview()">
+          </div>
+
+          <div class="input-field-group">
+            <label class="input-label" style="display: flex; justify-content: space-between;">
+              <span>Formatted Sheet Name:</span>
+              <span style="font-size: 11px; color: var(--text-muted);">[BRAND] [NAME] [WEIGHT]</span>
+            </label>
+            <input type="text" id="newProdFullName" class="input-control input-control-name" placeholder="e.g. KTC CORN OIL 1L">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-primary" style="flex: 2; padding: 14px; font-size: 15px;" onclick="confirmSaveNewProduct()">
+            💾 Save & Add to Master Sheet
+          </button>
+          <button type="button" class="btn btn-secondary" style="flex: 1; padding: 14px;" onclick="closeAddProductModal()">
+            Cancel
+          </button>
+        </div>
+
       </div>
     </div>
   </div>
@@ -883,8 +1309,29 @@
     const quickSyncBtn = document.getElementById('quickSyncBtn');
     const sheetUrlInput = document.getElementById('sheetUrlInput');
     const disconnectSheetBtn = document.getElementById('disconnectSheetBtn');
+    const sheetWebhookInput = document.getElementById('sheetWebhookInput');
+
+    // Add Product Modal Elements
+    const addProductModal = document.getElementById('addProductModal');
+    const newProdBarcode = document.getElementById('newProdBarcode');
+    const barcodeStatusTag = document.getElementById('barcodeStatusTag');
+    const productPhotoInput = document.getElementById('productPhotoInput');
+    const photoTray = document.getElementById('photoTray');
+    const analyzeAiBtn = document.getElementById('analyzeAiBtn');
+    const aiKeyBox = document.getElementById('aiKeyBox');
+    const geminiApiKeyInput = document.getElementById('geminiApiKeyInput');
+    const aiInfoBanner = document.getElementById('aiInfoBanner');
+    const newProdCode = document.getElementById('newProdCode');
+    const newProdPrice = document.getElementById('newProdPrice');
+    const newProdBrand = document.getElementById('newProdBrand');
+    const newProdWeight = document.getElementById('newProdWeight');
+    const newProdName = document.getElementById('newProdName');
+    const newProdFullName = document.getElementById('newProdFullName');
 
     let currentPricingMode = 'units'; // 'weight' or 'units'
+    let capturedPhotos = [];
+    let currentCaptureType = 'front';
+    let isScanningForNewProduct = false;
 
     // Init
     rebuildIndexes();
@@ -1513,6 +1960,17 @@
       playBeepSound();
       vibrateDevice();
 
+      if (isScanningForNewProduct) {
+        isScanningForNewProduct = false;
+        closeCameraScanner();
+        newProdBarcode.value = code;
+        onNewProdBarcodeChange();
+        openAddProductModal();
+        showToast('✓ Scanned barcode: ' + code, 'success');
+        setTimeout(() => { scanCooldown = false; }, 600);
+        return;
+      }
+
       const product = lookupBarcodeOrCode(code);
 
       if (product) {
@@ -1520,7 +1978,7 @@
         selectProduct(product);
         showToast('✓ Found: ' + product.name, 'success');
       } else {
-        showToast('⚠️ Barcode [' + code + '] not found in price list', 'error');
+        showToast('⚠️ Barcode [' + code + '] not in sheet. Tap "+" to add!', 'error');
         setTimeout(() => { scanCooldown = false; }, 1800);
         return;
       }
@@ -1546,6 +2004,449 @@
       document.getElementById('torchBtn').textContent = '⚡ Flash';
       document.getElementById('torchBtn').style.display = 'none';
       scanCooldown = false;
+      if (isScanningForNewProduct) {
+        isScanningForNewProduct = false;
+        openAddProductModal();
+      }
+    }
+
+    // ==========================================
+    // ADD NEW PRODUCT (AI SCAN & MULTI-PHOTO WORKFLOW)
+    // ==========================================
+    function getNextProductCode(products) {
+      let maxNum = 0;
+      for (let i = 0; i < products.length; i++) {
+        const code = String(products[i].code || '').trim();
+        const match = code.match(/^N(\d+)$/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum && num < 9000000) {
+            maxNum = num;
+          }
+        }
+      }
+      return 'N' + String(maxNum + 1).padStart(7, '0');
+    }
+
+    function openAddProductModal() {
+      newProdCode.value = getNextProductCode(PRODUCTS_DATA);
+      if (!newProdBarcode.value) {
+        barcodeStatusTag.textContent = 'Optional for loose produce';
+        barcodeStatusTag.style.color = '#6b7280';
+      }
+      addProductModal.style.display = 'flex';
+    }
+
+    function closeAddProductModal() {
+      addProductModal.style.display = 'none';
+      isScanningForNewProduct = false;
+      capturedPhotos = [];
+      renderPhotoTray();
+      aiInfoBanner.style.display = 'none';
+      newProdBarcode.value = '';
+      newProdPrice.value = '';
+      newProdBrand.value = '';
+      newProdWeight.value = '';
+      newProdName.value = '';
+      newProdFullName.value = '';
+    }
+
+    function triggerPhotoCapture(type) {
+      currentCaptureType = type;
+      productPhotoInput.click();
+    }
+
+    async function handlePhotoUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      try {
+        showToast('Compressing photo...', '');
+        const dataUrl = await compressImage(file, 1024, 0.82);
+        const labelMap = {
+          front: 'Front',
+          weight: 'Weight/Size',
+          shelf: 'Shelf Tag',
+          extra: 'Extra'
+        };
+        const photoObj = {
+          id: Date.now() + Math.random(),
+          type: currentCaptureType,
+          label: labelMap[currentCaptureType] || 'Photo',
+          dataUrl: dataUrl
+        };
+        capturedPhotos.push(photoObj);
+        renderPhotoTray();
+        showToast(`✓ Added ${photoObj.label} photo (${capturedPhotos.length} total)`, 'success');
+      } catch (err) {
+        console.error('Photo compression error:', err);
+        showToast('⚠️ Could not process photo', 'error');
+      } finally {
+        productPhotoInput.value = '';
+      }
+    }
+
+    function compressImage(file, maxDimension = 1024, quality = 0.82) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onerror = reject;
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+            if (width > maxDimension || height > maxDimension) {
+              if (width > height) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+              } else {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderPhotoTray() {
+      if (capturedPhotos.length === 0) {
+        photoTray.style.display = 'none';
+        photoTray.innerHTML = '';
+        analyzeAiBtn.innerHTML = '<span>✨ AI Extract Name, Weight & Shelf Price</span>';
+        return;
+      }
+
+      photoTray.style.display = 'flex';
+      photoTray.innerHTML = capturedPhotos.map(p => `
+        <div class="photo-thumb-card">
+          <img src="${p.dataUrl}" class="photo-thumb-img" alt="${p.label}">
+          <div class="photo-thumb-badge">${escapeHtml(p.label)}</div>
+          <button type="button" class="photo-thumb-del" onclick="removeCapturedPhoto(${p.id})">✕</button>
+        </div>
+      `).join('');
+
+      analyzeAiBtn.innerHTML = `<span>✨ AI Analyze ${capturedPhotos.length} Photo${capturedPhotos.length > 1 ? 's' : ''} & Shelf Price</span>`;
+    }
+
+    function removeCapturedPhoto(id) {
+      capturedPhotos = capturedPhotos.filter(p => p.id !== id);
+      renderPhotoTray();
+    }
+
+    function toggleApiKeyInput() {
+      aiKeyBox.style.display = aiKeyBox.style.display === 'none' ? 'block' : 'none';
+      if (aiKeyBox.style.display === 'block') {
+        geminiApiKeyInput.value = getGeminiApiKey();
+        geminiApiKeyInput.focus();
+      }
+    }
+
+    function getGeminiApiKey() {
+      return localStorage.getItem('gemini_api_key') || '';
+    }
+
+    function saveGeminiApiKey() {
+      const key = geminiApiKeyInput.value.trim();
+      if (!key) {
+        localStorage.removeItem('gemini_api_key');
+        showToast('API key removed', '');
+      } else {
+        localStorage.setItem('gemini_api_key', key);
+        showToast('✓ Gemini API Key saved!', 'success');
+      }
+      aiKeyBox.style.display = 'none';
+    }
+
+    function scanBarcodeForNewProduct() {
+      isScanningForNewProduct = true;
+      addProductModal.style.display = 'none';
+      openCameraScanner();
+    }
+
+    async function onNewProdBarcodeChange() {
+      const bc = newProdBarcode.value.trim();
+      if (!bc) {
+        barcodeStatusTag.textContent = 'Optional for loose produce';
+        barcodeStatusTag.style.color = '#6b7280';
+        return;
+      }
+
+      if (barcodeMap.has(bc)) {
+        const existing = barcodeMap.get(bc);
+        barcodeStatusTag.textContent = `⚠️ In sheet: ${existing.name}`;
+        barcodeStatusTag.style.color = '#b91c1c';
+        return;
+      }
+
+      barcodeStatusTag.textContent = '✓ New Barcode';
+      barcodeStatusTag.style.color = '#059669';
+
+      // Check Open Food Facts free database in background
+      lookupOpenFoodFacts(bc);
+    }
+
+    async function lookupOpenFoodFacts(bc) {
+      if (!bc || bc.length < 8) return;
+      try {
+        const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${bc}.json`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.status === 1 && data.product) {
+          const p = data.product;
+          if (p.brands && !newProdBrand.value) {
+            newProdBrand.value = p.brands.split(',')[0].trim().toUpperCase();
+          }
+          if (p.product_name && !newProdName.value) {
+            newProdName.value = p.product_name.trim().toUpperCase();
+          }
+          if (p.quantity && !newProdWeight.value) {
+            newProdWeight.value = p.quantity.trim().toUpperCase().replace(/\s+/g, '');
+          }
+          updateFormattedNamePreview();
+          showToast('✓ Recognized brand & product from barcode!', 'success');
+        }
+      } catch (e) {}
+    }
+
+    function updateFormattedNamePreview() {
+      const brand = newProdBrand.value.trim().toUpperCase();
+      const name = newProdName.value.trim().toUpperCase();
+      const weight = newProdWeight.value.trim().toUpperCase();
+
+      const parts = [];
+      if (brand) parts.push(brand);
+      if (name) parts.push(name);
+      if (weight) parts.push(weight);
+
+      newProdFullName.value = parts.join(' ').replace(/\s+/g, ' ');
+    }
+
+    async function analyzePhotosWithAI() {
+      if (capturedPhotos.length === 0) {
+        showToast('⚠️ Please snap at least 1 photo first', 'error');
+        return;
+      }
+
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) {
+        aiKeyBox.style.display = 'block';
+        geminiApiKeyInput.focus();
+        showToast('🔑 Please enter your free Gemini API key to enable photo AI', 'error');
+        return;
+      }
+
+      const originalBtnHtml = analyzeAiBtn.innerHTML;
+      analyzeAiBtn.disabled = true;
+      analyzeAiBtn.innerHTML = `<span>⏳ Analyzing ${capturedPhotos.length} photo(s)...</span>`;
+      showToast('🔍 AI analyzing brand, product name, weight & shelf price...', '');
+
+      try {
+        const parts = [];
+        parts.push({
+          text: `You are an expert grocery inventory manager for Nava Shop (a UK supermarket/convenience store).
+Analyze the attached photo(s) of a grocery item and/or shelf rack price tag.
+
+Photo Context:
+- Photos may show: the product front packaging (brand & product name), the back/side packaging (weight/size/ingredients), or the shop's shelf rack price tag.
+- Barcode scanned (if any): "${newProdBarcode.value.trim()}"
+
+Naming Rule in Nava Shop Master Sheet:
+- Format: [BRAND / COMPANY] [PRODUCT NAME / VARIANT] [WEIGHT / SIZE] in ALL UPPERCASE.
+- Examples from master sheet:
+  - "DARK FANTASY CHOCO MELTZ 75G"
+  - "DR NATURE MUSTARD OIL 500ML"
+  - "Mc VITIES JAFFA CAKES 10'S"
+  - "NATCO BASMATI MAMRA 454G"
+  - "JUST DRINK ALOE VERA 1.5L"
+  - "HARIBO PEACHES 100G"
+  - "DABUR RED TOOTH PASTE 200G"
+  - "COCA COLA CHERRY 500ML"
+  - "PRINGLES ORIGINAL 40G"
+  - "LUX VELVET SOAP 4*100G"
+  - "FRESH MUTTON KIDNEY /KG"
+  - "APOLLO ROLLING PIN EACH"
+
+Your Task:
+Extract:
+1. "brand": Brand or Company name in UPPERCASE (e.g. "KTC", "NATCO", "HARIBO", "COCA COLA", "MCVITIES"). If generic fresh produce or no brand, leave empty "".
+2. "productName": Product name, flavor, or description in UPPERCASE (e.g. "CORN OIL", "CHICK PEAS", "SOUR CREAM & ONION").
+3. "weight": Weight, volume, or pack count in UPPERCASE (e.g. "500G", "1KG", "400G", "330ML", "1.5L", "10'S", "4*100G", "EACH", "/KG").
+4. "price": Numeric price in GBP (e.g. 1.99 or 2.50) if clearly visible on a shelf rack price tag, shelf edge label, or printed on pack (e.g. "£1.29 PMP"). If price is NOT visible or uncertain, return null.
+5. "barcode": Numeric barcode digits if clearly visible in photos, otherwise null.
+6. "formattedName": Assemble into Nava Shop format: [BRAND] [PRODUCT NAME] [WEIGHT] (e.g. "KTC CORN OIL 1L").
+7. "missingInfo": Array of any missing key details: e.g. ["price"] if price was not on photos, ["weight"] if weight was not found, etc.
+
+Return ONLY a valid JSON object matching this schema:
+{
+  "brand": "...",
+  "productName": "...",
+  "weight": "...",
+  "price": 1.99,
+  "barcode": "...",
+  "formattedName": "...",
+  "missingInfo": []
+}`
+        });
+
+        for (const photo of capturedPhotos) {
+          const base64Data = photo.dataUrl.replace(/^data:image\/\w+;base64,/, '');
+          parts.push({
+            inlineData: {
+              mimeType: 'image/jpeg',
+              data: base64Data
+            }
+          });
+        }
+
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: parts }],
+            generationConfig: {
+              temperature: 0.1,
+              responseMimeType: 'application/json'
+            }
+          })
+        });
+
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({}));
+          throw new Error(errData.error?.message || ('HTTP ' + resp.status));
+        }
+
+        const data = await resp.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) throw new Error('Empty response from AI');
+
+        const result = JSON.parse(text);
+        applyAiResult(result);
+        showToast('✓ AI Extracted details! Please review.', 'success');
+      } catch (err) {
+        console.error('AI Analysis failed:', err);
+        showToast('⚠️ AI analysis: ' + err.message, 'error');
+      } finally {
+        analyzeAiBtn.disabled = false;
+        analyzeAiBtn.innerHTML = originalBtnHtml;
+      }
+    }
+
+    function applyAiResult(res) {
+      if (res.brand) newProdBrand.value = res.brand.toUpperCase();
+      if (res.productName) newProdName.value = res.productName.toUpperCase();
+      if (res.weight) newProdWeight.value = res.weight.toUpperCase();
+      if (res.formattedName) newProdFullName.value = res.formattedName.toUpperCase();
+      else updateFormattedNamePreview();
+
+      if (res.barcode && !newProdBarcode.value) {
+        newProdBarcode.value = res.barcode;
+        onNewProdBarcodeChange();
+      }
+
+      if (res.price != null && !isNaN(res.price) && res.price > 0) {
+        newProdPrice.value = Number(res.price).toFixed(2);
+        aiInfoBanner.className = 'ai-info-banner success';
+        aiInfoBanner.textContent = `✓ Shelf price detected from photo: £${Number(res.price).toFixed(2)}`;
+      } else {
+        aiInfoBanner.className = 'ai-info-banner warning';
+        aiInfoBanner.textContent = '⚠️ Shelf price not found on photos. Please enter the shelf price.';
+        newProdPrice.focus();
+      }
+
+      if (res.missingInfo && res.missingInfo.includes('weight') && !newProdWeight.value) {
+        aiInfoBanner.className = 'ai-info-banner warning';
+        aiInfoBanner.textContent = (aiInfoBanner.textContent ? aiInfoBanner.textContent + ' ' : '') + 'Please check weight/size.';
+      }
+    }
+
+    async function confirmSaveNewProduct() {
+      let code = newProdCode.value.trim().toUpperCase();
+      const name = newProdFullName.value.trim().toUpperCase();
+      const price = parseFloat(newProdPrice.value);
+      const barcode = newProdBarcode.value.trim();
+
+      if (!name) {
+        showToast('⚠️ Please enter a product name', 'error');
+        newProdFullName.focus();
+        return;
+      }
+      if (isNaN(price) || price <= 0) {
+        showToast('⚠️ Please enter a valid price', 'error');
+        newProdPrice.focus();
+        return;
+      }
+      if (!code) {
+        code = getNextProductCode(PRODUCTS_DATA);
+      }
+
+      // Check if barcode already exists
+      if (barcode && barcodeMap.has(barcode)) {
+        const existing = barcodeMap.get(barcode);
+        if (!confirm(`⚠️ Barcode ${barcode} is already assigned to:\n"${existing.name}"\n\nDo you want to save anyway?`)) {
+          return;
+        }
+      }
+
+      const newItem = {
+        code: code,
+        name: name,
+        price: price
+      };
+      if (barcode) {
+        newItem.barcode = barcode;
+      }
+
+      // 1. Instantly add to local catalog & rebuild search indexes
+      PRODUCTS_DATA.unshift(newItem);
+      rebuildIndexes();
+
+      try {
+        localStorage.setItem('cached_sheet_data', JSON.stringify(PRODUCTS_DATA));
+      } catch (e) {}
+
+      // Update header pill
+      updateSyncPill(true, `Live (${PRODUCTS_DATA.length})`);
+
+      // 2. Sync to Google Sheet via Webhook if configured
+      const webhookUrl = localStorage.getItem('google_apps_script_url') || (sheetWebhookInput ? sheetWebhookInput.value.trim() : '');
+      if (webhookUrl) {
+        fetch(webhookUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newItem)
+        }).then(() => {
+          console.log('Appended to Google Sheet via Webhook');
+        }).catch(err => {
+          console.warn('Webhook post error:', err);
+        });
+      }
+
+      // 3. Track in pending additions
+      try {
+        const pending = JSON.parse(localStorage.getItem('pending_sheet_additions') || '[]');
+        pending.push(newItem);
+        localStorage.setItem('pending_sheet_additions', JSON.stringify(pending));
+      } catch (e) {}
+
+      playBeepSound();
+      vibrateDevice();
+      showToast(`✅ Saved ${name} (£${price.toFixed(2)}) to master list!`, 'success');
+
+      closeAddProductModal();
+
+      // Display the newly created product immediately in the product card!
+      selectProduct(newItem);
     }
 
     // ==========================================
@@ -1561,6 +2462,9 @@
     function openSyncModal() {
       const currentUrl = localStorage.getItem('google_sheet_url') || DEFAULT_SHEET_URL;
       sheetUrlInput.value = currentUrl;
+      if (sheetWebhookInput) {
+        sheetWebhookInput.value = localStorage.getItem('google_apps_script_url') || '';
+      }
       disconnectSheetBtn.style.display = 'block';
       syncModal.style.display = 'flex';
     }
@@ -1588,6 +2492,9 @@
 
       localStorage.setItem('google_sheet_url', rawInput);
       localStorage.setItem('google_sheet_id', sheetId);
+      if (sheetWebhookInput) {
+        localStorage.setItem('google_apps_script_url', sheetWebhookInput.value.trim());
+      }
       closeSyncModal();
       showToast('Connecting to Google Sheet...', '');
       await fetchGoogleSheetData(sheetId, true);
