@@ -802,50 +802,73 @@
         return;
       }
 
-      // 3. Search query across name, code, barcode
-      const queryWords = cleanQuery.split(/\s+/);
-      const results = [];
+      // 3. Search query across name, code, barcode with intelligent relevance ranking
+      const queryWords = cleanQuery.split(/\s+/).filter(Boolean);
+      const scoredResults = [];
 
       for (let i = 0; i < PRODUCTS_DATA.length; i++) {
         const p = PRODUCTS_DATA[i];
-        const name = p.name.toLowerCase();
-        const code = String(p.code).toLowerCase();
-        const bc = p.barcode || '';
+        const name = (p.name || '').toLowerCase();
+        const code = String(p.code || '').toLowerCase();
+        const bc = p.barcode ? String(p.barcode) : '';
+        const searchable = name + ' ' + code + ' ' + bc;
 
-        // Check if barcode or code contains query
-        if (bc && bc.includes(query)) {
-          results.push(p);
-          if (results.length >= 15) break;
-          continue;
-        }
-        if (code.includes(cleanQuery)) {
-          results.push(p);
-          if (results.length >= 15) break;
-          continue;
-        }
-
-        // Check if all words in query match product name
+        // Every typed word must match somewhere in the product (in any order)
         let allWordsMatch = true;
         for (let w = 0; w < queryWords.length; w++) {
-          if (!name.includes(queryWords[w])) {
+          if (!searchable.includes(queryWords[w])) {
             allWordsMatch = false;
             break;
           }
         }
+        if (!allWordsMatch) continue;
 
-        if (allWordsMatch) {
-          results.push(p);
-          if (results.length >= 15) break;
+        // Calculate relevance score
+        let score = 0;
+
+        // Exact match on full name
+        if (name === cleanQuery) {
+          score += 3000;
         }
+        // Name starts with the exact query
+        else if (name.startsWith(cleanQuery)) {
+          score += 1500;
+        }
+        // Name contains the exact full query phrase
+        else if (name.includes(cleanQuery)) {
+          score += 600;
+        }
+
+        // Word boundary matching (e.g. "ripe" matches whole word "RIPE")
+        const nameWords = name.split(/\s+/);
+        for (let qw of queryWords) {
+          for (let nw of nameWords) {
+            if (nw === qw) score += 120;
+            else if (nw.startsWith(qw)) score += 60;
+          }
+        }
+
+        // Code matching bonuses
+        if (code === cleanQuery) score += 2500;
+        else if (code.startsWith(cleanQuery)) score += 1000;
+
+        // Prefer shorter, more concise product names (e.g. "Plantain Ripe" over a 40-character description)
+        score += Math.max(0, 100 - name.length);
+
+        scoredResults.push({ p, score });
       }
 
-      if (results.length === 0) {
+      if (scoredResults.length === 0) {
         suggestionsDiv.innerHTML = '<div style="padding: 16px; text-align: center; color: #9ca3af;">No matching products found</div>';
         suggestionsDiv.style.display = 'block';
         return;
       }
 
-      renderSuggestions(results);
+      // Sort by best score descending so the most relevant items are always first!
+      scoredResults.sort((a, b) => b.score - a.score);
+      const topResults = scoredResults.slice(0, 35).map(item => item.p);
+
+      renderSuggestions(topResults, queryWords, scoredResults.length);
     });
 
     // Support for physical / Bluetooth barcode scanners (sends Enter key)
@@ -864,11 +887,26 @@
       }
     });
 
-    function renderSuggestions(list) {
-      suggestionsDiv.innerHTML = list.map(p => `
+    function highlightMatches(text, words) {
+      if (!text) return '';
+      let escaped = escapeHtml(text);
+      if (!words || words.length === 0) return escaped;
+      for (let w of words) {
+        if (!w) continue;
+        const safeWord = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        try {
+          const re = new RegExp('(' + safeWord + ')', 'gi');
+          escaped = escaped.replace(re, '<mark style="background: #fef08a; padding: 1px 3px; border-radius: 3px; font-weight: 700;">$1</mark>');
+        } catch (e) {}
+      }
+      return escaped;
+    }
+
+    function renderSuggestions(list, words = [], totalCount = 0) {
+      let html = list.map(p => `
         <div class="suggestion" onclick="handleSuggestionClick('${p.code}')">
           <div class="sugg-info">
-            <div class="sugg-name">${escapeHtml(p.name)}</div>
+            <div class="sugg-name">${highlightMatches(p.name, words)}</div>
             <div class="sugg-meta">
               <span>Code: <strong>${p.code}</strong></span>
               ${p.barcode ? `<span>Barcode: <strong>${p.barcode}</strong></span>` : ''}
@@ -877,6 +915,12 @@
           <div class="sugg-price">${formatPrice(p.price)}</div>
         </div>
       `).join('');
+
+      if (totalCount > 35) {
+        html += `<div style="padding: 10px; text-align: center; font-size: 12px; color: #9ca3af; background: #fafafa; border-top: 1px solid var(--border);">Showing top 35 of ${totalCount} matches — type more to narrow down</div>`;
+      }
+
+      suggestionsDiv.innerHTML = html;
       suggestionsDiv.style.display = 'block';
     }
 
