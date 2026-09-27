@@ -679,11 +679,15 @@
       codeMap.clear();
       for (let i = 0; i < PRODUCTS_DATA.length; i++) {
         const p = PRODUCTS_DATA[i];
-        if (p.barcode) {
-          const b = String(p.barcode).trim();
-          barcodeMap.set(b, p);
-          if (b.startsWith('0')) {
-            barcodeMap.set(b.replace(/^0+/, ''), p);
+        const name = (p.name || '').toLowerCase();
+        const code = String(p.code || '').toLowerCase();
+        const bc = p.barcode ? String(p.barcode).trim() : '';
+        const price = p.price != null ? String(p.price) : '';
+
+        if (bc) {
+          barcodeMap.set(bc, p);
+          if (bc.startsWith('0')) {
+            barcodeMap.set(bc.replace(/^0+/, ''), p);
           }
         }
         if (p.code) {
@@ -693,6 +697,14 @@
             codeMap.set(c.padStart(5, '0'), p);
           }
         }
+
+        // Precompute flexible search index: expand units (1.5L -> " 1.5 l 1.5l ") and normalize symbols
+        const expandedUnits = name.replace(/(\d+(?:\.\d+)?)\s*(kg|g|l|ml|cl|ltr|litre|gm|oz|pk|pcs|s)\b/gi, (m, num, unit) => {
+          return ' ' + num + ' ' + unit + ' ' + num + unit + ' ';
+        });
+        const cleanSeparators = name.replace(/[*xX\/+&'-]/g, ' ');
+
+        p._search = (name + ' ' + expandedUnits + ' ' + cleanSeparators + ' ' + code + ' ' + bc + ' ' + price + ' ' + Number(price).toFixed(2)).toLowerCase();
       }
     }
 
@@ -811,7 +823,7 @@
         const name = (p.name || '').toLowerCase();
         const code = String(p.code || '').toLowerCase();
         const bc = p.barcode ? String(p.barcode) : '';
-        const searchable = name + ' ' + code + ' ' + bc;
+        const searchable = p._search || (name + ' ' + code + ' ' + bc);
 
         // Every typed word must match somewhere in the product (in any order)
         let allWordsMatch = true;
