@@ -1153,10 +1153,17 @@
     // ==========================================
     // GOOGLE SHEETS LIVE SYNC
     // ==========================================
+    const DEFAULT_SHEET_ID = '1Y7g3UcoKQYykETgNg0eeJ7RyKmnpKAV4B8AZJZbM-gc';
+    const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1Y7g3UcoKQYykETgNg0eeJ7RyKmnpKAV4B8AZJZbM-gc/edit?usp=sharing';
+
+    function getActiveSheetId() {
+      return localStorage.getItem('google_sheet_id') || DEFAULT_SHEET_ID;
+    }
+
     function openSyncModal() {
-      const currentUrl = localStorage.getItem('google_sheet_url') || '';
+      const currentUrl = localStorage.getItem('google_sheet_url') || DEFAULT_SHEET_URL;
       sheetUrlInput.value = currentUrl;
-      disconnectSheetBtn.style.display = currentUrl ? 'block' : 'none';
+      disconnectSheetBtn.style.display = 'block';
       syncModal.style.display = 'flex';
     }
 
@@ -1189,24 +1196,18 @@
     }
 
     function disconnectGoogleSheet() {
-      if (confirm('Disconnect Google Sheet and revert to offline data?')) {
+      if (confirm('Reset to default Nava Shop Google Sheet?')) {
         localStorage.removeItem('google_sheet_url');
         localStorage.removeItem('google_sheet_id');
         localStorage.removeItem('cached_sheet_data');
-        PRODUCTS_DATA = EMBEDDED_DATA;
-        rebuildIndexes();
-        updateSyncPill(false);
         closeSyncModal();
-        showToast('Google Sheet disconnected.', '');
+        initGoogleSheetSync();
+        showToast('Reset to default Google Sheet.', '');
       }
     }
 
     async function initGoogleSheetSync() {
-      const sheetId = localStorage.getItem('google_sheet_id');
-      if (!sheetId) {
-        updateSyncPill(false);
-        return;
-      }
+      const sheetId = getActiveSheetId();
 
       // Check cached sheet data
       const cached = localStorage.getItem('cached_sheet_data');
@@ -1218,16 +1219,12 @@
       }
 
       updateSyncPill(true, 'Syncing...');
-      // Fetch in background
+      // Fetch live data from Google Sheet in background
       await fetchGoogleSheetData(sheetId, false);
     }
 
     async function refreshGoogleSheetSync() {
-      const sheetId = localStorage.getItem('google_sheet_id');
-      if (!sheetId) {
-        openSyncModal();
-        return;
-      }
+      const sheetId = getActiveSheetId();
       showToast('Refreshing prices from Google Sheets...', '');
       await fetchGoogleSheetData(sheetId, true);
     }
@@ -1253,14 +1250,13 @@
           // Exceeds quota if huge, in-memory works
         }
 
-        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         updateSyncPill(true, `Live (${parsed.length})`);
         if (isManual) {
           showToast(`✓ Synced: ${parsed.length} items live from Google Sheets!`, 'success');
         }
       } catch (err) {
         console.error('Google Sheet sync error:', err);
-        updateSyncPill(true, 'Sync Error (Offline Mode)');
+        updateSyncPill(true, 'Live (Offline fallback)');
         if (isManual) {
           showToast('⚠️ Could not sync. Check sheet permissions ("Anyone with link can view").', 'error');
         }
@@ -1268,15 +1264,9 @@
     }
 
     function updateSyncPill(connected, text = '') {
-      if (connected) {
-        syncStatusPill.className = 'pill pill-live';
-        syncStatusPill.textContent = '🟢 ' + (text || 'Live Sheet');
-        quickSyncBtn.style.display = 'inline-flex';
-      } else {
-        syncStatusPill.className = 'pill';
-        syncStatusPill.textContent = '📊 Connect Sheet';
-        quickSyncBtn.style.display = 'none';
-      }
+      syncStatusPill.className = 'pill pill-live';
+      syncStatusPill.textContent = '🟢 ' + (text || 'Live Sheet');
+      quickSyncBtn.style.display = 'inline-flex';
     }
 
     function parseGoogleSheetCSV(text) {
