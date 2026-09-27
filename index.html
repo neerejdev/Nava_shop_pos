@@ -741,6 +741,18 @@
     .photo-snap-btn:active {
       transform: scale(0.96);
     }
+    .photo-snap-btn.suggested-next {
+      border: 2px solid var(--primary);
+      background: #eef2ff;
+      color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25);
+      animation: pulseSnapBtn 1.8s infinite;
+    }
+    @keyframes pulseSnapBtn {
+      0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.45); }
+      70% { box-shadow: 0 0 0 8px rgba(79, 70, 229, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+    }
     .photo-snap-icon {
       font-size: 22px;
     }
@@ -1115,17 +1127,17 @@
           </p>
 
           <div class="photo-capture-grid">
-            <button type="button" class="photo-snap-btn" onclick="triggerPhotoCapture('front')">
+            <button type="button" class="photo-snap-btn" id="snapBtnFront" onclick="triggerPhotoCapture('front')">
               <span class="photo-snap-icon">📦</span>
               <span>1. Front</span>
               <span style="font-size: 10px; color: #9ca3af;">Name & Brand</span>
             </button>
-            <button type="button" class="photo-snap-btn" onclick="triggerPhotoCapture('weight')">
+            <button type="button" class="photo-snap-btn" id="snapBtnWeight" onclick="triggerPhotoCapture('weight')">
               <span class="photo-snap-icon">⚖️</span>
               <span>2. Weight/Back</span>
               <span style="font-size: 10px; color: #9ca3af;">Size / Grams</span>
             </button>
-            <button type="button" class="photo-snap-btn" onclick="triggerPhotoCapture('shelf')">
+            <button type="button" class="photo-snap-btn" id="snapBtnShelf" onclick="triggerPhotoCapture('shelf')">
               <span class="photo-snap-icon">🏷️</span>
               <span>3. Shelf Tag</span>
               <span style="font-size: 10px; color: #9ca3af;">Price on Rack</span>
@@ -1181,24 +1193,24 @@
             </div>
             <div class="input-field-group" style="flex: 1;">
               <label class="input-label">Price (£)</label>
-              <input type="number" step="0.01" min="0.01" id="newProdPrice" class="input-control" placeholder="1.99" style="font-size: 16px; font-weight: 700; color: #4f46e5;">
+              <input type="number" step="0.01" min="0.01" id="newProdPrice" class="input-control" placeholder="1.99" style="font-size: 16px; font-weight: 700; color: #4f46e5;" oninput="checkSufficientInfoAndGuideUser()">
             </div>
           </div>
 
           <div style="display: flex; gap: 8px; margin-bottom: 10px;">
             <div class="input-field-group" style="flex: 1;">
               <label class="input-label">Brand / Company</label>
-              <input type="text" id="newProdBrand" class="input-control" placeholder="e.g. KTC, NATCO, WALKERS" oninput="updateFormattedNamePreview()">
+              <input type="text" id="newProdBrand" class="input-control" placeholder="e.g. KTC, NATCO, WALKERS" oninput="updateFormattedNamePreview(); checkSufficientInfoAndGuideUser();">
             </div>
             <div class="input-field-group" style="width: 100px;">
               <label class="input-label">Weight / Size</label>
-              <input type="text" id="newProdWeight" class="input-control" placeholder="e.g. 500G" oninput="updateFormattedNamePreview()">
+              <input type="text" id="newProdWeight" class="input-control" placeholder="e.g. 500G" oninput="updateFormattedNamePreview(); checkSufficientInfoAndGuideUser();">
             </div>
           </div>
 
           <div class="input-field-group" style="margin-bottom: 10px;">
             <label class="input-label">Product Name / Flavor</label>
-            <input type="text" id="newProdName" class="input-control" placeholder="e.g. CORN OIL or CHICK PEAS" oninput="updateFormattedNamePreview()">
+            <input type="text" id="newProdName" class="input-control" placeholder="e.g. CORN OIL or CHICK PEAS" oninput="updateFormattedNamePreview(); checkSufficientInfoAndGuideUser();">
           </div>
 
           <div class="input-field-group">
@@ -1206,7 +1218,7 @@
               <span>Formatted Sheet Name:</span>
               <span style="font-size: 11px; color: var(--text-muted);">[BRAND] [NAME] [WEIGHT]</span>
             </label>
-            <input type="text" id="newProdFullName" class="input-control input-control-name" placeholder="e.g. KTC CORN OIL 1L">
+            <input type="text" id="newProdFullName" class="input-control input-control-name" placeholder="e.g. KTC CORN OIL 1L" oninput="checkSufficientInfoAndGuideUser()">
           </div>
         </div>
 
@@ -2042,7 +2054,15 @@
       isScanningForNewProduct = false;
       capturedPhotos = [];
       renderPhotoTray();
+      aiInfoBanner.className = 'ai-info-banner';
       aiInfoBanner.style.display = 'none';
+      aiInfoBanner.innerHTML = '';
+      const btnFront = document.getElementById('snapBtnFront');
+      const btnWeight = document.getElementById('snapBtnWeight');
+      const btnShelf = document.getElementById('snapBtnShelf');
+      if (btnFront) btnFront.classList.remove('suggested-next');
+      if (btnWeight) btnWeight.classList.remove('suggested-next');
+      if (btnShelf) btnShelf.classList.remove('suggested-next');
       newProdBarcode.value = '';
       newProdPrice.value = '';
       newProdBrand.value = '';
@@ -2078,6 +2098,16 @@
         capturedPhotos.push(photoObj);
         renderPhotoTray();
         showToast(`✓ Added ${photoObj.label} photo (${capturedPhotos.length} total)`, 'success');
+
+        // Automatically check & run AI analysis upon finishing the photo!
+        const apiKey = getGeminiApiKey();
+        if (apiKey) {
+          analyzePhotosWithAI();
+        } else {
+          aiKeyBox.style.display = 'block';
+          aiInfoBanner.className = 'ai-info-banner warning';
+          aiInfoBanner.innerHTML = '📷 <strong>Photo captured!</strong> Please enter your free Google Gemini API key above to enable automatic photo recognition, or enter details manually below.';
+        }
       } catch (err) {
         console.error('Photo compression error:', err);
         showToast('⚠️ Could not process photo', 'error');
@@ -2141,6 +2171,7 @@
     function removeCapturedPhoto(id) {
       capturedPhotos = capturedPhotos.filter(p => p.id !== id);
       renderPhotoTray();
+      checkSufficientInfoAndGuideUser();
     }
 
     function toggleApiKeyInput() {
@@ -2163,6 +2194,9 @@
       } else {
         localStorage.setItem('gemini_api_key', key);
         showToast('✓ Gemini API Key saved!', 'success');
+        if (capturedPhotos.length > 0) {
+          analyzePhotosWithAI();
+        }
       }
       aiKeyBox.style.display = 'none';
     }
@@ -2213,6 +2247,7 @@
             newProdWeight.value = p.quantity.trim().toUpperCase().replace(/\s+/g, '');
           }
           updateFormattedNamePreview();
+          checkSufficientInfoAndGuideUser();
           showToast('✓ Recognized brand & product from barcode!', 'success');
         }
       } catch (e) {}
@@ -2220,13 +2255,31 @@
 
     function updateFormattedNamePreview() {
       const brand = newProdBrand.value.trim().toUpperCase();
-      const name = newProdName.value.trim().toUpperCase();
+      let name = newProdName.value.trim().toUpperCase();
       const weight = newProdWeight.value.trim().toUpperCase();
 
       const parts = [];
-      if (brand) parts.push(brand);
-      if (name) parts.push(name);
-      if (weight) parts.push(weight);
+      if (brand && name) {
+        if (name.startsWith(brand + ' ')) {
+          parts.push(name);
+        } else if (name === brand) {
+          parts.push(brand);
+        } else {
+          parts.push(brand);
+          parts.push(name);
+        }
+      } else if (brand) {
+        parts.push(brand);
+      } else if (name) {
+        parts.push(name);
+      }
+
+      if (weight) {
+        const currentStr = parts.join(' ');
+        if (!currentStr.endsWith(weight)) {
+          parts.push(weight);
+        }
+      }
 
       newProdFullName.value = parts.join(' ').replace(/\s+/g, ' ');
     }
@@ -2247,44 +2300,38 @@
 
       const originalBtnHtml = analyzeAiBtn.innerHTML;
       analyzeAiBtn.disabled = true;
-      analyzeAiBtn.innerHTML = `<span>⏳ Analyzing ${capturedPhotos.length} photo(s)...</span>`;
-      showToast('🔍 AI analyzing brand, product name, weight & shelf price...', '');
+      analyzeAiBtn.innerHTML = `<span>⏳ Reading photo (${capturedPhotos.length})...</span>`;
+      showToast('🔍 AI reading photo & updating fields below...', '');
+
+      aiInfoBanner.className = 'ai-info-banner warning';
+      aiInfoBanner.style.display = 'block';
+      aiInfoBanner.innerHTML = `⚡ <strong>Analyzing photo (${capturedPhotos.length})...</strong> Checking brand, product name, weight & shelf price...`;
 
       try {
         const parts = [];
         parts.push({
-          text: `You are an expert grocery inventory manager for Nava Shop (a UK supermarket/convenience store).
+          text: `You are an expert grocery inventory assistant for Nava Shop.
 Analyze the attached photo(s) of a grocery item and/or shelf rack price tag.
 
-Photo Context:
-- Photos may show: the product front packaging (brand & product name), the back/side packaging (weight/size/ingredients), or the shop's shelf rack price tag.
-- Barcode scanned (if any): "${newProdBarcode.value.trim()}"
+Context currently in form:
+- Barcode: "${newProdBarcode.value.trim()}"
+- Brand so far: "${newProdBrand.value.trim()}"
+- Product name so far: "${newProdName.value.trim()}"
+- Weight/size so far: "${newProdWeight.value.trim()}"
+- Price so far: "${newProdPrice.value.trim()}"
 
-Naming Rule in Nava Shop Master Sheet:
-- Format: [BRAND / COMPANY] [PRODUCT NAME / VARIANT] [WEIGHT / SIZE] in ALL UPPERCASE.
-- Examples from master sheet:
-  - "DARK FANTASY CHOCO MELTZ 75G"
-  - "DR NATURE MUSTARD OIL 500ML"
-  - "Mc VITIES JAFFA CAKES 10'S"
-  - "NATCO BASMATI MAMRA 454G"
-  - "JUST DRINK ALOE VERA 1.5L"
-  - "HARIBO PEACHES 100G"
-  - "DABUR RED TOOTH PASTE 200G"
-  - "COCA COLA CHERRY 500ML"
-  - "PRINGLES ORIGINAL 40G"
-  - "LUX VELVET SOAP 4*100G"
-  - "FRESH MUTTON KIDNEY /KG"
-  - "APOLLO ROLLING PIN EACH"
+Master Sheet Naming Rule:
+- Format: [BRAND] [PRODUCT NAME/VARIANT] [WEIGHT/SIZE] in ALL UPPERCASE.
+- Examples: "KTC CORN OIL 1L", "WALKERS TOMATO KETCHUP 70G", "NATCO BASMATI MAMRA 454G", "HARIBO PEACHES 100G", "FRESH MUTTON KIDNEY /KG".
 
-Your Task:
-Extract:
-1. "brand": Brand or Company name in UPPERCASE (e.g. "KTC", "NATCO", "HARIBO", "COCA COLA", "MCVITIES"). If generic fresh produce or no brand, leave empty "".
-2. "productName": Product name, flavor, or description in UPPERCASE (e.g. "CORN OIL", "CHICK PEAS", "SOUR CREAM & ONION").
-3. "weight": Weight, volume, or pack count in UPPERCASE (e.g. "500G", "1KG", "400G", "330ML", "1.5L", "10'S", "4*100G", "EACH", "/KG").
-4. "price": Numeric price in GBP (e.g. 1.99 or 2.50) if clearly visible on a shelf rack price tag, shelf edge label, or printed on pack (e.g. "£1.29 PMP"). If price is NOT visible or uncertain, return null.
-5. "barcode": Numeric barcode digits if clearly visible in photos, otherwise null.
-6. "formattedName": Assemble into Nava Shop format: [BRAND] [PRODUCT NAME] [WEIGHT] (e.g. "KTC CORN OIL 1L").
-7. "missingInfo": Array of any missing key details: e.g. ["price"] if price was not on photos, ["weight"] if weight was not found, etc.
+Task:
+Extract whatever new or confirmed details are visible in the photo(s):
+1. "brand": Brand or company name in UPPERCASE (e.g. "KTC", "WALKERS", "HARIBO"). If not visible, return existing brand or "".
+2. "productName": Product title or flavor in UPPERCASE (e.g. "TOMATO KETCHUP CRISPS", "CORN OIL"). Do not repeat brand prefix if separable. If not visible, return existing or "".
+3. "weight": Package weight, volume, or count in UPPERCASE (e.g. "70G", "1KG", "500ML", "330ML", "10'S", "/KG"). If not visible, return existing or "".
+4. "price": Numeric price in GBP (e.g. 1.25, 1.99) if visible on a shelf rack price tag or printed on pack. If not visible, return null.
+5. "barcode": Barcode digits if visible in photos, otherwise null.
+6. "formattedName": Assembled: [BRAND] [PRODUCT NAME] [WEIGHT] (e.g. "WALKERS TOMATO KETCHUP CRISPS 70G").
 
 Return ONLY a valid JSON object matching this schema:
 {
@@ -2293,8 +2340,7 @@ Return ONLY a valid JSON object matching this schema:
   "weight": "...",
   "price": 1.99,
   "barcode": "...",
-  "formattedName": "...",
-  "missingInfo": []
+  "formattedName": "..."
 }`
         });
 
@@ -2331,10 +2377,11 @@ Return ONLY a valid JSON object matching this schema:
 
         const result = JSON.parse(text);
         applyAiResult(result);
-        showToast('✓ AI Extracted details! Please review.', 'success');
+        showToast('✓ Updated fields below! See guide banner.', 'success');
       } catch (err) {
         console.error('AI Analysis failed:', err);
         showToast('⚠️ AI analysis: ' + err.message, 'error');
+        checkSufficientInfoAndGuideUser();
       } finally {
         analyzeAiBtn.disabled = false;
         analyzeAiBtn.innerHTML = originalBtnHtml;
@@ -2342,11 +2389,16 @@ Return ONLY a valid JSON object matching this schema:
     }
 
     function applyAiResult(res) {
+      // Update whatever was extracted into the fields below
       if (res.brand) newProdBrand.value = res.brand.toUpperCase();
       if (res.productName) newProdName.value = res.productName.toUpperCase();
       if (res.weight) newProdWeight.value = res.weight.toUpperCase();
-      if (res.formattedName) newProdFullName.value = res.formattedName.toUpperCase();
-      else updateFormattedNamePreview();
+
+      if (res.formattedName && res.formattedName.trim().length > 3) {
+        newProdFullName.value = res.formattedName.toUpperCase();
+      } else {
+        updateFormattedNamePreview();
+      }
 
       if (res.barcode && !newProdBarcode.value) {
         newProdBarcode.value = res.barcode;
@@ -2355,18 +2407,94 @@ Return ONLY a valid JSON object matching this schema:
 
       if (res.price != null && !isNaN(res.price) && res.price > 0) {
         newProdPrice.value = Number(res.price).toFixed(2);
-        aiInfoBanner.className = 'ai-info-banner success';
-        aiInfoBanner.textContent = `✓ Shelf price detected from photo: £${Number(res.price).toFixed(2)}`;
-      } else {
-        aiInfoBanner.className = 'ai-info-banner warning';
-        aiInfoBanner.textContent = '⚠️ Shelf price not found on photos. Please enter the shelf price.';
-        newProdPrice.focus();
       }
 
-      if (res.missingInfo && res.missingInfo.includes('weight') && !newProdWeight.value) {
-        aiInfoBanner.className = 'ai-info-banner warning';
-        aiInfoBanner.textContent = (aiInfoBanner.textContent ? aiInfoBanner.textContent + ' ' : '') + 'Please check weight/size.';
+      // Check if we have sufficient info and guide the user on what is needed next
+      checkSufficientInfoAndGuideUser();
+    }
+
+    function checkSufficientInfoAndGuideUser() {
+      const brand = (newProdBrand.value || '').trim();
+      const name = (newProdName.value || '').trim();
+      const weight = (newProdWeight.value || '').trim();
+      const priceVal = parseFloat(newProdPrice.value);
+      const hasPrice = !isNaN(priceVal) && priceVal > 0;
+      const hasBrand = !!brand;
+      const hasName = !!name;
+      const hasWeight = !!weight;
+
+      // Reset pulsing on all buttons
+      const btnFront = document.getElementById('snapBtnFront');
+      const btnWeight = document.getElementById('snapBtnWeight');
+      const btnShelf = document.getElementById('snapBtnShelf');
+      if (btnFront) btnFront.classList.remove('suggested-next');
+      if (btnWeight) btnWeight.classList.remove('suggested-next');
+      if (btnShelf) btnShelf.classList.remove('suggested-next');
+
+      aiInfoBanner.style.display = 'block';
+
+      // 1. All details complete!
+      if ((hasBrand || hasName) && hasWeight && hasPrice) {
+        aiInfoBanner.className = 'ai-info-banner success';
+        aiInfoBanner.innerHTML = `
+          <div style="font-weight: 700; font-size: 13px; color: #065f46; margin-bottom: 4px;">🎉 All Details Complete!</div>
+          <div style="font-size: 12px; color: #047857; margin-bottom: 6px;">
+            • Product: <strong>${escapeHtml(newProdFullName.value || (brand + ' ' + name + ' ' + weight))}</strong><br>
+            • Price: <strong>£${priceVal.toFixed(2)}</strong>
+          </div>
+          <div style="font-size: 11px; color: #065f46;">Review the confirm fields below and tap <strong>Save & Add to Master Sheet</strong>.</div>
+        `;
+        return;
       }
+
+      // 2. Build list of what we have so far
+      const gotItems = [];
+      if (hasBrand) gotItems.push(`Brand: <strong>${escapeHtml(brand)}</strong>`);
+      if (hasName) gotItems.push(`Product: <strong>${escapeHtml(name)}</strong>`);
+      if (hasWeight) gotItems.push(`Weight: <strong>${escapeHtml(weight)}</strong>`);
+      if (hasPrice) gotItems.push(`Price: <strong>£${priceVal.toFixed(2)}</strong>`);
+
+      const missingList = [];
+      let nextAction = '';
+      let targetButton = null;
+
+      if (!hasBrand && !hasName) {
+        missingList.push('Brand & Product Name');
+        nextAction = 'Please snap <strong>1. Front</strong> of the package (or type below).';
+        targetButton = btnFront;
+      } else if (!hasWeight && !hasPrice) {
+        missingList.push('Weight / Size');
+        missingList.push('Shelf Price');
+        nextAction = 'Please snap <strong>2. Weight/Back</strong> for size, then <strong>3. Shelf Tag</strong> for price.';
+        targetButton = btnWeight;
+      } else if (!hasWeight) {
+        missingList.push('Weight / Size');
+        nextAction = 'Please snap <strong>2. Weight/Back</strong> of the package (e.g. 500G, 1KG).';
+        targetButton = btnWeight;
+      } else if (!hasPrice) {
+        missingList.push('Shelf Price');
+        nextAction = 'Please snap <strong>3. Shelf Tag</strong> on the shelf rack (or type below).';
+        targetButton = btnShelf;
+      } else if (!hasBrand) {
+        missingList.push('Brand / Company');
+        nextAction = 'Please enter Brand / Company below (or snap <strong>1. Front</strong>).';
+        targetButton = btnFront;
+      }
+
+      if (targetButton) {
+        targetButton.classList.add('suggested-next');
+      }
+
+      aiInfoBanner.className = 'ai-info-banner warning';
+      aiInfoBanner.innerHTML = `
+        ${gotItems.length > 0 ? `<div style="margin-bottom: 5px; font-size: 12px;"><span style="color: #059669; font-weight: 600;">✓ Got so far:</span> ${gotItems.join(' · ')}</div>` : ''}
+        <div style="font-size: 12px; font-weight: 600; color: #92400e; margin-bottom: 3px;">
+          ⚠️ Need next: ${missingList.join(', ')}
+        </div>
+        <div style="font-size: 11px; color: #78350f; line-height: 1.4;">
+          &rarr; <strong>${nextAction}</strong>
+        </div>
+      `;
     }
 
     async function confirmSaveNewProduct() {
