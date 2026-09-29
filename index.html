@@ -1062,17 +1062,34 @@
             style="padding: 10px 12px; font-size: 13px; margin-bottom: 6px;" 
             placeholder="https://script.google.com/macros/s/.../exec"
           >
-          <details style="font-size: 12px; color: #4b5563; line-height: 1.4;">
-            <summary style="cursor: pointer; color: var(--primary); font-weight: 600;">How to get your free Webhook URL (2 mins)</summary>
-            <div style="background: #f3f4f6; padding: 8px; border-radius: 6px; margin-top: 6px; font-family: monospace; font-size: 11px;">
-              In your Sheet: Extensions &rarr; Apps Script &rarr; paste this:<br><br>
-              function doPost(e) {<br>
-              &nbsp;&nbsp;var s = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();<br>
-              &nbsp;&nbsp;var d = JSON.parse(e.postData.contents);<br>
-              &nbsp;&nbsp;s.appendRow([d.code, d.name, d.price, d.barcode]);<br>
-              &nbsp;&nbsp;return ContentService.createTextOutput('ok');<br>
-              }<br><br>
-              Click <b>Deploy &rarr; New Deployment &rarr; Web app</b> (Who has access: <b>Anyone</b>). Copy the URL here!
+          <div id="pendingUploadCard" style="display: none; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 12px;">
+            <div style="font-weight: 700; color: #3730a3; margin-bottom: 4px;" id="pendingUploadCount">📦 0 Items Pending Upload</div>
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <button type="button" class="btn btn-primary" style="flex: 1; padding: 6px 10px; font-size: 11px;" onclick="pushAllPendingToWebhook()">🚀 Push to Sheet</button>
+              <button type="button" class="btn btn-secondary" style="flex: 1; padding: 6px 10px; font-size: 11px;" onclick="copyAllPendingToClipboard()">📋 Copy Rows</button>
+              <button type="button" class="btn btn-secondary" style="padding: 6px 10px; font-size: 11px; color: #b91c1c;" onclick="clearPendingAdditions()">Clear</button>
+            </div>
+          </div>
+          <details style="font-size: 12px; color: #4b5563; line-height: 1.4;" open>
+            <summary style="cursor: pointer; color: var(--primary); font-weight: 600;">How to connect your Sheet for 1-Click Auto-Save (30 sec)</summary>
+            <div style="background: #f3f4f6; padding: 10px; border-radius: 6px; margin-top: 6px; font-size: 12px;">
+              <strong>Step 1:</strong> In your Google Sheet, click <strong>Extensions &rarr; Apps Script</strong>.<br>
+              <strong>Step 2:</strong> Paste this script:<br>
+              <div style="position: relative; margin: 6px 0;">
+                <pre id="appsScriptCodeBlock" style="background: #1f2937; color: #f3f4f6; padding: 8px; border-radius: 4px; font-family: monospace; font-size: 11px; overflow-x: auto; white-space: pre-wrap;">function doPost(e) {
+  try {
+    var s = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var d = JSON.parse(e.postData.contents);
+    s.appendRow([d.code, d.name, Number(d.price), d.barcode || '']);
+    return ContentService.createTextOutput(JSON.stringify({status: 'success'})).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({status: 'error', message: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}</pre>
+                <button type="button" class="btn btn-primary" onclick="copyAppsScriptCode()" style="margin-top: 4px; padding: 5px 12px; font-size: 11px;">📋 Copy Apps Script</button>
+              </div>
+              <strong>Step 3:</strong> Click <strong>Deploy &rarr; New deployment</strong> &rarr; Select <strong>Web app</strong>.<br>
+              Set <em>Who has access</em> to <strong>Anyone</strong>. Click <strong>Deploy</strong> and copy the Web app URL here!
             </div>
           </details>
         </div>
@@ -1330,6 +1347,38 @@
           </button>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- Google Sheet Sync Notice Modal (When saved without webhook) -->
+  <div class="modal-overlay" id="syncNoticeModal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>✅ Saved to POS Master List!</h3>
+        <button class="close-modal-btn" onclick="closeSyncNoticeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; color: #065f46;">
+          <strong id="savedItemTitle">Product</strong> is saved in this POS and searchable immediately!
+        </div>
+
+        <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 8px; margin-bottom: 14px; font-size: 13px; color: #92400e; line-height: 1.4;">
+          <strong>⚠️ Why isn't it in your online Google Sheet yet?</strong><br>
+          Google Sheets requires a free 30-second Webhook to allow this phone app to add rows to your spreadsheet online.
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <button type="button" class="btn btn-primary" id="copyRowBtn" onclick="copyLastSavedRowToClipboard()" style="padding: 12px; font-size: 14px;">
+            📋 Copy Row (To Paste in Google Sheet)
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="closeSyncNoticeModal(); openSyncModal();" style="padding: 10px; font-size: 13px;">
+            ⚙️ Connect Google Sheet Webhook (30s Setup)
+          </button>
+          <button type="button" class="btn" onclick="closeSyncNoticeModal()" style="padding: 8px; font-size: 12px; color: #6b7280; background: transparent; border: none;">
+            Dismiss
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -2843,22 +2892,7 @@ Return ONLY a valid JSON object matching this schema:
       // Update header pill
       updateSyncPill(true, `Live (${PRODUCTS_DATA.length})`);
 
-      // 2. Sync to Google Sheet via Webhook if configured
-      const webhookUrl = localStorage.getItem('google_apps_script_url') || (sheetWebhookInput ? sheetWebhookInput.value.trim() : '');
-      if (webhookUrl) {
-        fetch(webhookUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newItem)
-        }).then(() => {
-          console.log('Appended to Google Sheet via Webhook');
-        }).catch(err => {
-          console.warn('Webhook post error:', err);
-        });
-      }
-
-      // 3. Track in pending additions
+      // 2. Track in pending additions
       try {
         const pending = JSON.parse(localStorage.getItem('pending_sheet_additions') || '[]');
         pending.push(newItem);
@@ -2867,12 +2901,154 @@ Return ONLY a valid JSON object matching this schema:
 
       playBeepSound();
       vibrateDevice();
-      showToast(`✅ Saved ${name} (£${price.toFixed(2)}) to master list!`, 'success');
-
       closeAddProductModal();
-
-      // Display the newly created product immediately in the product card!
       selectProduct(newItem);
+
+      // 3. Sync to Google Sheet via Webhook if configured
+      const webhookUrl = localStorage.getItem('google_apps_script_url') || (sheetWebhookInput ? sheetWebhookInput.value.trim() : '');
+      if (webhookUrl) {
+        showToast(`Saving ${name} to Google Sheet...`, '');
+        fetch(webhookUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newItem)
+        }).then(() => {
+          console.log('Appended to Google Sheet via Webhook');
+          try {
+            const pending = JSON.parse(localStorage.getItem('pending_sheet_additions') || '[]');
+            const filtered = pending.filter(p => p.code !== newItem.code);
+            localStorage.setItem('pending_sheet_additions', JSON.stringify(filtered));
+          } catch (e) {}
+          showToast(`✅ Saved ${name} to Google Sheet & Master List!`, 'success');
+        }).catch(err => {
+          console.warn('Webhook post error:', err);
+          showToast(`⚠️ Saved locally, but Webhook could not reach Google Sheet`, 'warning');
+        });
+      } else {
+        // Webhook not configured yet - show notice modal with 1-click Copy Row & 30-sec Webhook setup!
+        showSyncNoticeModal(newItem);
+      }
+    }
+
+    let lastSavedProduct = null;
+
+    function showSyncNoticeModal(item) {
+      lastSavedProduct = item;
+      const titleEl = document.getElementById('savedItemTitle');
+      if (titleEl) {
+        titleEl.textContent = `${item.name} (£${Number(item.price).toFixed(2)})`;
+      }
+      const m = document.getElementById('syncNoticeModal');
+      if (m) m.style.display = 'flex';
+    }
+
+    function closeSyncNoticeModal() {
+      const m = document.getElementById('syncNoticeModal');
+      if (m) m.style.display = 'none';
+    }
+
+    function copyLastSavedRowToClipboard() {
+      if (!lastSavedProduct) return;
+      const row = [lastSavedProduct.code, lastSavedProduct.name, lastSavedProduct.price, lastSavedProduct.barcode || ''].join(String.fromCharCode(9));
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(row).then(() => {
+          showToast('✓ Copied row! Open Google Sheet and press Paste (Ctrl+V)', 'success');
+        }).catch(() => {
+          prompt('Copy this row for Google Sheet:', row);
+        });
+      } else {
+        prompt('Copy this row for Google Sheet:', row);
+      }
+    }
+
+    function copyAppsScriptCode() {
+      const el = document.getElementById('appsScriptCodeBlock');
+      const code = el ? el.innerText.trim() : 'function doPost(e) { ... }';
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => {
+          showToast('✓ Copied Apps Script! Paste into Extensions → Apps Script', 'success');
+        }).catch(() => {
+          prompt('Copy Apps Script code:', code);
+        });
+      } else {
+        prompt('Copy Apps Script code:', code);
+      }
+    }
+
+    function renderPendingUploads() {
+      const card = document.getElementById('pendingUploadCard');
+      const countEl = document.getElementById('pendingUploadCount');
+      if (!card || !countEl) return;
+      const pending = JSON.parse(localStorage.getItem('pending_sheet_additions') || '[]');
+      if (pending.length > 0) {
+        card.style.display = 'block';
+        countEl.textContent = '📦 ' + pending.length + ' Item' + (pending.length > 1 ? 's' : '') + ' Saved on Phone (Pending Sheet Upload)';
+      } else {
+        card.style.display = 'none';
+      }
+    }
+
+    function copyAllPendingToClipboard() {
+      const pending = JSON.parse(localStorage.getItem('pending_sheet_additions') || '[]');
+      if (pending.length === 0) {
+        showToast('No pending items', '');
+        return;
+      }
+      const TAB = String.fromCharCode(9);
+      const NL = String.fromCharCode(10);
+      const text = pending.map(p => [p.code, p.name, p.price, p.barcode || ''].join(TAB)).join(NL);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('✓ Copied ' + pending.length + ' rows! Paste into Google Sheet (Ctrl+V)', 'success');
+        }).catch(() => {
+          prompt('Copy rows for Google Sheet:', text);
+        });
+      } else {
+        prompt('Copy rows for Google Sheet:', text);
+      }
+    }
+
+    async function pushAllPendingToWebhook() {
+      const webhookUrl = localStorage.getItem('google_apps_script_url') || (sheetWebhookInput ? sheetWebhookInput.value.trim() : '');
+      if (!webhookUrl) {
+        showToast('⚠️ Please enter your Webhook URL above first', 'error');
+        sheetWebhookInput.focus();
+        return;
+      }
+      const pending = JSON.parse(localStorage.getItem('pending_sheet_additions') || '[]');
+      if (pending.length === 0) {
+        showToast('✓ No pending items to push', 'success');
+        return;
+      }
+
+      showToast(`Pushing ${pending.length} items to Google Sheet...`, '');
+      let count = 0;
+      for (const item of pending) {
+        try {
+          await fetch(webhookUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+          });
+          count++;
+        } catch (e) {
+          console.warn('Failed to push item:', item, e);
+        }
+      }
+
+      localStorage.removeItem('pending_sheet_additions');
+      renderPendingUploads();
+      showToast(`✓ Synced ${count} items to Google Sheet!`, 'success');
+    }
+
+    function clearPendingAdditions() {
+      if (confirm('Clear the pending items list? (Only do this after you have pasted them into Google Sheet)')) {
+        localStorage.removeItem('pending_sheet_additions');
+        renderPendingUploads();
+        showToast('Cleared pending items', '');
+      }
     }
 
     // ==========================================
@@ -2891,6 +3067,7 @@ Return ONLY a valid JSON object matching this schema:
       if (sheetWebhookInput) {
         sheetWebhookInput.value = localStorage.getItem('google_apps_script_url') || '';
       }
+      renderPendingUploads();
       disconnectSheetBtn.style.display = 'block';
       syncModal.style.display = 'flex';
     }
@@ -2971,6 +3148,21 @@ Return ONLY a valid JSON object matching this schema:
         if (parsed.length === 0) {
           throw new Error('No items parsed from CSV');
         }
+
+        // Preserve any pending local additions that haven't been added to Google Sheet yet!
+        try {
+          const pending = JSON.parse(localStorage.getItem('pending_sheet_additions') || '[]');
+          if (pending.length > 0) {
+            const existingCodes = new Set(parsed.map(p => String(p.code).toUpperCase()));
+            const existingNames = new Set(parsed.map(p => String(p.name).trim().toUpperCase()));
+            for (let i = pending.length - 1; i >= 0; i--) {
+              const item = pending[i];
+              if (!existingCodes.has(String(item.code).toUpperCase()) && !existingNames.has(String(item.name).trim().toUpperCase())) {
+                parsed.unshift(item);
+              }
+            }
+          }
+        } catch (e) {}
 
         PRODUCTS_DATA = parsed;
         rebuildIndexes();
