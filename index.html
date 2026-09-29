@@ -103,7 +103,7 @@
     }
     .search-input {
       width: 100%;
-      padding: 14px 44px 14px 16px;
+      padding: 14px 72px 14px 16px;
       font-size: 16px;
       border: 2px solid var(--border);
       border-radius: 12px;
@@ -115,9 +115,32 @@
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
     }
+    .voice-search-btn {
+      position: absolute;
+      right: 38px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: all 0.15s;
+    }
+    .voice-search-btn:active, .voice-search-btn.recording-pulse {
+      background: #ef4444;
+      color: white;
+      border-color: #dc2626;
+      transform: translateY(-50%) scale(1.1);
+    }
     .clear-search-btn {
       position: absolute;
-      right: 12px;
+      right: 8px;
       top: 50%;
       transform: translateY(-50%);
       background: #e5e7eb;
@@ -888,6 +911,7 @@
       <span class="pill" id="currencyToggle" title="Click to change currency">💷 Currency: £</span>
       <span class="pill pill-live" id="syncStatusPill" onclick="openSyncModal()" title="Google Sheet is connected">🟢 Live (27,050)</span>
       <span class="pill" id="quickSyncBtn" onclick="refreshGoogleSheetSync()" title="Refresh prices from Google Sheet">🔄 Sync</span>
+      <a href="https://docs.google.com/spreadsheets/d/1Y7g3UcoKQYykETgNg0eeJ7RyKmnpKAV4B8AZJZbM-gc/edit" target="_blank" class="pill" title="Open master Google Sheet" style="text-decoration: none; color: inherit;">📂 Sheet ↗</a>
     </div>
   </header>
 
@@ -905,6 +929,7 @@
           autocorrect="off" 
           spellcheck="false"
         >
+        <button type="button" class="voice-search-btn" id="voiceSearchBtn" onclick="startVoiceSearch()" title="Voice Search (Speak product name)">🎙️</button>
         <button class="clear-search-btn" id="clearSearchBtn" onclick="clearSearch()">✕</button>
       </div>
       <button class="scan-btn" id="openScannerBtn" onclick="openCameraScanner()">
@@ -1055,13 +1080,16 @@
           <label style="font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 4px;">
             Google Apps Script Webhook (For Auto-Save):
           </label>
-          <input 
-            type="text" 
-            id="sheetWebhookInput" 
-            class="search-input" 
-            style="padding: 10px 12px; font-size: 13px; margin-bottom: 6px;" 
-            placeholder="https://script.google.com/macros/s/.../exec"
-          >
+          <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+            <input 
+              type="text" 
+              id="sheetWebhookInput" 
+              class="search-input" 
+              style="flex: 1; padding: 10px 12px; font-size: 13px;" 
+              placeholder="https://script.google.com/macros/s/.../exec"
+            >
+            <button type="button" class="btn btn-secondary" style="padding: 10px 12px; font-size: 12px; white-space: nowrap;" onclick="testWebhookConnection()">🧪 Test</button>
+          </div>
           <div id="pendingUploadCard" style="display: none; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 12px;">
             <div style="font-weight: 700; color: #3730a3; margin-bottom: 4px;" id="pendingUploadCount">📦 0 Items Pending Upload</div>
             <div style="display: flex; gap: 6px; margin-top: 6px;">
@@ -1492,6 +1520,7 @@
     let capturedPhotos = [];
     let currentCaptureType = 'front';
     let isScanningForNewProduct = false;
+    let lastSearchQuery = '';
 
     // Init
     rebuildIndexes();
@@ -1556,6 +1585,7 @@
     // Search Logic
     searchInput.addEventListener('input', (e) => {
       const query = e.target.value.trim();
+      lastSearchQuery = query;
       clearSearchBtn.style.display = query ? 'flex' : 'none';
 
       if (!query) {
@@ -1658,7 +1688,13 @@
       }
 
       if (scoredResults.length === 0) {
-        suggestionsDiv.innerHTML = '<div style="padding: 16px; text-align: center; color: #9ca3af;">No matching products found</div>';
+        suggestionsDiv.innerHTML = `
+          <div style="padding: 18px 14px; text-align: center; color: #4b5563;">
+            <div style="font-size: 14px; font-weight: 600; color: #1f2937; margin-bottom: 4px;">No products match "${escapeHtml(query)}"</div>
+            <div style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">Quickly add this product to your Master List and Google Sheet:</div>
+            <button type="button" class="btn btn-primary" style="font-size: 13px; padding: 9px 18px; border-radius: 8px; box-shadow: 0 2px 4px rgba(16,185,129,0.25);" onclick="openNewProductWithQuery(lastSearchQuery)">➕ Add "${escapeHtml(query)}" to Master List</button>
+          </div>
+        `;
         suggestionsDiv.style.display = 'block';
         return;
       }
@@ -1753,6 +1789,45 @@
       clearSearchBtn.style.display = 'none';
       suggestionsDiv.style.display = 'none';
       searchInput.focus();
+    }
+
+    function startVoiceSearch() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        showToast('⚠️ Voice search not supported on this browser (use Chrome or Safari)', 'error');
+        return;
+      }
+      const btn = document.getElementById('voiceSearchBtn');
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-GB';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        if (btn) btn.classList.add('recording-pulse');
+        showToast('🎙️ Listening... speak product name (e.g. "Jacme veg puffs")', '');
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          if (transcript) {
+            searchInput.value = transcript;
+            searchInput.dispatchEvent(new Event('input'));
+            showToast(`🎙️ Heard: "${transcript}"`, 'success');
+          }
+        };
+        recognition.onerror = (e) => {
+          console.warn('Speech recognition error:', e);
+          showToast('⚠️ Could not hear audio. Please try again.', 'error');
+        };
+        recognition.onend = () => {
+          if (btn) btn.classList.remove('recording-pulse');
+        };
+        recognition.start();
+      } catch (err) {
+        console.error('Voice search failed to start:', err);
+        if (btn) btn.classList.remove('recording-pulse');
+        showToast('⚠️ Microphone access error', 'error');
+      }
     }
 
     // Barcode & Code Helper
@@ -1882,6 +1957,9 @@
       if (isWeight) {
         cardWeight.value = '';
         setPricingMode('weight');
+        setTimeout(() => {
+          cardWeight.focus();
+        }, 150);
       } else {
         cardQty.value = '1';
         setPricingMode('units');
@@ -2195,6 +2273,14 @@
         barcodeStatusTag.style.color = '#6b7280';
       }
       addProductModal.style.display = 'flex';
+    }
+
+    function openNewProductWithQuery(query) {
+      openAddProductModal();
+      if (query) {
+        newProdName.value = String(query).trim().toUpperCase();
+        updateFormattedNamePreview();
+      }
     }
 
     function closeAddProductModal() {
@@ -2735,14 +2821,15 @@ Return ONLY a valid JSON object matching this schema:
 
     function applyAiResult(res) {
       if (!res) return;
-      if (res.brand) newProdBrand.value = String(res.brand).trim().toUpperCase();
-      if (res.productName) newProdName.value = String(res.productName).trim().toUpperCase();
-      if (res.weight) newProdWeight.value = String(res.weight).trim().toUpperCase();
-
-      if (res.formattedName && res.formattedName.trim().length > 3) {
-        newProdFullName.value = String(res.formattedName).trim().toUpperCase();
-      } else {
-        updateFormattedNamePreview();
+      // Progressive feature fusion: never overwrite an already established good value with an empty or shorter one
+      if (res.brand && (!newProdBrand.value || String(res.brand).trim().length >= newProdBrand.value.length)) {
+        newProdBrand.value = String(res.brand).trim().toUpperCase();
+      }
+      if (res.productName && (!newProdName.value || String(res.productName).trim().length >= newProdName.value.length)) {
+        newProdName.value = String(res.productName).trim().toUpperCase();
+      }
+      if (res.weight) {
+        newProdWeight.value = String(res.weight).trim().toUpperCase();
       }
 
       if (res.barcode && !newProdBarcode.value) {
@@ -2755,6 +2842,13 @@ Return ONLY a valid JSON object matching this schema:
         if (!isNaN(p) && p > 0) {
           newProdPrice.value = p.toFixed(2);
         }
+      }
+
+      // Re-synthesize master formatted name using fused brand, name, and weight
+      updateFormattedNamePreview();
+
+      if (res.formattedName && res.formattedName.trim().length > 4 && (!newProdFullName.value || newProdFullName.value.length < 5)) {
+        newProdFullName.value = String(res.formattedName).trim().toUpperCase();
       }
 
       checkSufficientInfoAndGuideUser();
@@ -3101,6 +3195,37 @@ Return ONLY a valid JSON object matching this schema:
       closeSyncModal();
       showToast('Connecting to Google Sheet...', '');
       await fetchGoogleSheetData(sheetId, true);
+    }
+
+    async function testWebhookConnection() {
+      const webhookUrl = sheetWebhookInput ? sheetWebhookInput.value.trim() : (localStorage.getItem('google_apps_script_url') || '');
+      if (!webhookUrl) {
+        showToast('⚠️ Please enter Webhook URL first', 'error');
+        if (sheetWebhookInput) sheetWebhookInput.focus();
+        return;
+      }
+      showToast('Testing Webhook connection...', '');
+      const testItem = {
+        code: 'TEST-PING',
+        name: 'TEST CONNECTION (DELETE ME)',
+        price: 0.01,
+        barcode: '00000000'
+      };
+      try {
+        const t0 = performance.now();
+        await fetch(webhookUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(testItem)
+        });
+        const duration = ((performance.now() - t0) / 1000).toFixed(1);
+        localStorage.setItem('google_apps_script_url', webhookUrl);
+        showToast(`🟢 Connected! Webhook responded in ${duration}s. Ping row added to Sheet.`, 'success');
+      } catch (err) {
+        console.error('Webhook test error:', err);
+        showToast('🔴 Webhook error. Check deployment "Who has access: Anyone".', 'error');
+      }
     }
 
     function disconnectGoogleSheet() {
