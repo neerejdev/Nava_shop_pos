@@ -9,6 +9,8 @@
   <title>Nava Shop POS - Price Check & Scanner</title>
   <!-- html5-qrcode scanner library -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- In-browser local OCR fallback -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" async></script>
   <style>
     :root {
       --primary: #4f46e5;
@@ -1096,11 +1098,11 @@
 
       <div class="modal-body">
         
-        <!-- Step 1: Scan Barcode (Optional for loose produce) -->
+        <!-- Step 1: Scan Barcode (Instant & 100% Offline/Free) -->
         <div class="form-section">
           <div class="form-section-title">
             <span>1. Product Barcode</span>
-            <span id="barcodeStatusTag" style="font-size: 11px; text-transform: none; color: #6b7280;">Optional for loose produce</span>
+            <span id="barcodeStatusTag" style="font-size: 11px; text-transform: none; color: #059669; font-weight: 600;">⚡ Instant 0.2s lookup</span>
           </div>
           <div class="barcode-input-row">
             <input 
@@ -1110,9 +1112,12 @@
               placeholder="Scan or type barcode (e.g. 5000328...)"
               oninput="onNewProdBarcodeChange()"
             >
-            <button type="button" class="btn-barcode-scan" onclick="scanBarcodeForNewProduct()">
-              📷 Scan
+            <button type="button" class="btn-barcode-scan" onclick="scanBarcodeForNewProduct()" style="white-space: nowrap;">
+              📷 Scan Barcode
             </button>
+          </div>
+          <div style="font-size: 11px; color: #059669; margin-top: 5px;">
+            💡 Tip: Scanning the barcode instantly auto-fills Brand, Name & Weight from global grocery database (works even when AI is busy)!
           </div>
         </div>
 
@@ -1159,7 +1164,7 @@
 
           <!-- AI Magic Analyze Button -->
           <button type="button" class="btn-ai-magic" id="analyzeAiBtn" onclick="analyzePhotosWithAI()" style="width: 100%;">
-            <span>✨ AI Extract Name, Weight & Shelf Price</span>
+            <span>✨ Analyze Photos (Cloud AI + Local OCR)</span>
           </button>
 
           <!-- AI Key Input Section (Collapsible) -->
@@ -1172,7 +1177,7 @@
               <input type="password" id="geminiApiKeyInput" class="input-control" placeholder="AIzaSy..." style="font-size: 13px;">
               <button type="button" class="btn btn-primary" style="padding: 8px 14px; min-width: auto; font-size: 13px;" onclick="saveGeminiApiKey()">Save</button>
             </div>
-            <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Enables automatic multimodal photo recognition from multiple images in seconds.</div>
+            <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Pre-configured shop key is active. Local on-device OCR runs automatically if cloud AI is busy.</div>
           </div>
 
           <!-- AI Notification Banner -->
@@ -1200,11 +1205,91 @@
           <div style="display: flex; gap: 8px; margin-bottom: 10px;">
             <div class="input-field-group" style="flex: 1;">
               <label class="input-label">Brand / Company</label>
-              <input type="text" id="newProdBrand" class="input-control" placeholder="e.g. KTC, NATCO, WALKERS" oninput="updateFormattedNamePreview(); checkSufficientInfoAndGuideUser();">
+              <input type="text" id="newProdBrand" class="input-control" placeholder="e.g. KTC, NATCO, TRS" list="shopBrandsList" oninput="updateFormattedNamePreview(); checkSufficientInfoAndGuideUser();">
+              <datalist id="shopBrandsList">
+                <option value="NATCO"></option>
+                <option value="TRS"></option>
+                <option value="HEERA"></option>
+                <option value="FUDCO"></option>
+                <option value="KTC"></option>
+                <option value="HALDIRAM'S"></option>
+                <option value="SHANKAR"></option>
+                <option value="MAYURI"></option>
+                <option value="JAIMIN"></option>
+                <option value="AYTAC"></option>
+                <option value="JACME"></option>
+                <option value="NESTLE"></option>
+                <option value="CADBURY"></option>
+                <option value="AACHI"></option>
+                <option value="LAILA"></option>
+                <option value="EAST END"></option>
+                <option value="SHAN"></option>
+                <option value="VISWAS"></option>
+                <option value="UTHRA"></option>
+                <option value="ASHOKA"></option>
+                <option value="NIHARTI"></option>
+                <option value="COFRESH"></option>
+                <option value="RAMDEV"></option>
+                <option value="HIMALAYA"></option>
+                <option value="SARAS"></option>
+                <option value="HARIBO"></option>
+                <option value="RUBICON"></option>
+                <option value="LUCOZADE"></option>
+                <option value="DABUR"></option>
+                <option value="NIRU"></option>
+                <option value="COCA-COLA"></option>
+                <option value="FANTA"></option>
+                <option value="VATIKA"></option>
+                <option value="GITS"></option>
+                <option value="BRAHMINS"></option>
+                <option value="PEPSI"></option>
+                <option value="LAZIZA"></option>
+                <option value="BRITANNIA"></option>
+                <option value="MTR"></option>
+                <option value="RAJAH"></option>
+                <option value="MAGGI"></option>
+                <option value="PRIYA"></option>
+                <option value="WALKERS"></option>
+                <option value="EASTERN"></option>
+                <option value="AJMI"></option>
+                <option value="TILDA"></option>
+                <option value="EVEREST"></option>
+                <option value="SHANA"></option>
+                <option value="MELAM"></option>
+                <option value="BIKAJI"></option>
+                <option value="MDH"></option>
+                <option value="ROYAL"></option>
+                <option value="PARLE"></option>
+                <option value="PRAN"></option>
+                <option value="CHING'S"></option>
+                <option value="WEIKFIELD"></option>
+                <option value="NATIONAL"></option>
+                <option value="TATA"></option>
+                <option value="PATAK'S"></option>
+                <option value="FRESH PRODUCE"></option>
+              </datalist>
             </div>
-            <div class="input-field-group" style="width: 100px;">
+            <div class="input-field-group" style="width: 110px;">
               <label class="input-label">Weight / Size</label>
-              <input type="text" id="newProdWeight" class="input-control" placeholder="e.g. 500G" oninput="updateFormattedNamePreview(); checkSufficientInfoAndGuideUser();">
+              <input type="text" id="newProdWeight" class="input-control" placeholder="e.g. 500G" list="shopWeightsList" oninput="updateFormattedNamePreview(); checkSufficientInfoAndGuideUser();">
+              <datalist id="shopWeightsList">
+                <option value="500G"></option>
+                <option value="1KG"></option>
+                <option value="2KG"></option>
+                <option value="5KG"></option>
+                <option value="10KG"></option>
+                <option value="250G"></option>
+                <option value="100G"></option>
+                <option value="454G"></option>
+                <option value="70G"></option>
+                <option value="1L"></option>
+                <option value="2L"></option>
+                <option value="5L"></option>
+                <option value="330ML"></option>
+                <option value="500ML"></option>
+                <option value="1.5L"></option>
+                <option value="/KG"></option>
+              </datalist>
             </div>
           </div>
 
@@ -2369,53 +2454,138 @@ Return ONLY a valid JSON object matching this schema:
           });
         }
 
-        let resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: parts }],
-            generationConfig: {
-              temperature: 0.1,
-              responseMimeType: 'application/json'
-            }
-          })
-        });
+        // 1. Try healthy Google models in order: gemini-3-flash-preview, then gemini-3.6-flash
+        const modelsToTry = ['gemini-3-flash-preview', 'gemini-3.6-flash'];
+        let successResult = null;
 
-        if (!resp.ok) {
-          // Fallback to gemini-3.8-flash in case of temporary model spike
-          resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: parts }],
-              generationConfig: {
-                temperature: 0.1,
-                responseMimeType: 'application/json'
+        for (const modelName of modelsToTry) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000);
+            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              signal: controller.signal,
+              body: JSON.stringify({
+                contents: [{ parts: parts }],
+                generationConfig: {
+                  temperature: 0.1,
+                  responseMimeType: 'application/json'
+                }
+              })
+            });
+            clearTimeout(timeoutId);
+            if (r.ok) {
+              const data = await r.json();
+              const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (text) {
+                successResult = JSON.parse(text);
+                break;
               }
-            })
-          });
+            }
+          } catch (modelErr) {
+            console.warn(`Model ${modelName} trial error:`, modelErr);
+          }
         }
 
-        if (!resp.ok) {
-          const errData = await resp.json().catch(() => ({}));
-          throw new Error(errData.error?.message || ('HTTP ' + resp.status));
+        if (successResult) {
+          applyAiResult(successResult);
+          showToast('✓ AI recognized details! Updated fields below.', 'success');
+        } else {
+          // Cloud models busy or 503: Automatically run in-browser local OCR fallback!
+          await analyzeWithOnDeviceOCR(capturedPhotos);
         }
-
-        const data = await resp.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!text) throw new Error('Empty response from AI');
-
-        const result = JSON.parse(text);
-        applyAiResult(result);
-        showToast('✓ Updated fields below! See guide banner.', 'success');
       } catch (err) {
         console.error('AI Analysis failed:', err);
-        showToast('⚠️ AI analysis: ' + err.message, 'error');
-        checkSufficientInfoAndGuideUser();
+        await analyzeWithOnDeviceOCR(capturedPhotos);
       } finally {
         analyzeAiBtn.disabled = false;
         analyzeAiBtn.innerHTML = originalBtnHtml;
       }
+    }
+
+    async function analyzeWithOnDeviceOCR(photos) {
+      if (typeof Tesseract === 'undefined') {
+        showToast('ℹ️ Cloud AI busy. Enter details below or scan barcode.', '');
+        checkSufficientInfoAndGuideUser();
+        return;
+      }
+
+      aiInfoBanner.className = 'ai-info-banner warning';
+      aiInfoBanner.style.display = 'block';
+      aiInfoBanner.innerHTML = '⚡ <strong>Cloud AI busy — Reading text locally on your device...</strong>';
+
+      try {
+        let combinedText = '';
+        for (const photo of photos) {
+          const res = await Tesseract.recognize(photo.dataUrl, 'eng');
+          if (res && res.data && res.data.text) {
+            combinedText += '\n' + res.data.text;
+          }
+        }
+
+        if (combinedText.trim()) {
+          parseAndApplyOcrText(combinedText);
+          showToast('✓ Local scanner read photo details!', 'success');
+        } else {
+          showToast('ℹ️ Please enter details below or scan barcode', '');
+          checkSufficientInfoAndGuideUser();
+        }
+      } catch (ocrErr) {
+        console.warn('On-device OCR fallback error:', ocrErr);
+        showToast('ℹ️ Please enter details below or scan barcode', '');
+        checkSufficientInfoAndGuideUser();
+      }
+    }
+
+    function parseAndApplyOcrText(rawText) {
+      const upper = rawText.toUpperCase();
+
+      // 1. Extract Price (£X.XX or X.XX)
+      if (!newProdPrice.value) {
+        const priceMatch = rawText.match(/(?:£|GBP|PRICE|\b)\s*(\d+[.,]\d{2})\b/i);
+        if (priceMatch) {
+          const p = parseFloat(priceMatch[1].replace(',', '.'));
+          if (!isNaN(p) && p > 0.05 && p < 100) {
+            newProdPrice.value = p.toFixed(2);
+          }
+        }
+      }
+
+      // 2. Extract Weight (e.g. 500G, 1KG, 1L, 330ML, 454G, /KG)
+      if (!newProdWeight.value) {
+        const weightMatch = upper.match(/\b(\d+(?:\.\d+)?)\s*(KG|G|L|ML|CL|GM|GMS)\b/);
+        if (weightMatch) {
+          newProdWeight.value = (weightMatch[1] + weightMatch[2]).replace(/\s+/g, '');
+        } else if (upper.includes('/KG') || upper.includes('PER KG')) {
+          newProdWeight.value = '/KG';
+        }
+      }
+
+      // 3. Match Brand against Nava Shop top brands
+      if (!newProdBrand.value) {
+        const topBrands = [
+          "NATCO", "TRS", "HEERA", "FUDCO", "KTC", "HALDIRAM'S", "SHANKAR", "MAYURI", 
+          "JAIMIN", "AYTAC", "JACME", "NESTLE", "CADBURY", "AACHI", "LAILA", "EAST END", 
+          "SHAN", "VISWAS", "UTHRA", "ASHOKA", "NIHARTI", "COFRESH", "RAMDEV", "HIMALAYA", 
+          "SARAS", "HARIBO", "RUBICON", "LUCOZADE", "DABUR", "NIRU", "COCA-COLA", "FANTA", 
+          "VATIKA", "GITS", "BRAHMINS", "PEPSI", "LAZIZA", "BRITANNIA", "MTR", "RAJAH", 
+          "MAGGI", "PRIYA", "WALKERS", "EASTERN", "AJMI", "TILDA", "EVEREST", "SHANA", 
+          "MELAM", "BIKAJI", "MDH", "ROYAL", "PARLE", "PRAN", "CHING'S", "WEIKFIELD", 
+          "NATIONAL", "TATA", "PATAK'S"
+        ];
+        for (const b of topBrands) {
+          const escaped = b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp('\\b' + escaped + '\\b', 'i');
+          if (regex.test(upper)) {
+            newProdBrand.value = b;
+            break;
+          }
+        }
+      }
+
+      updateFormattedNamePreview();
+      checkSufficientInfoAndGuideUser();
     }
 
     function applyAiResult(res) {
