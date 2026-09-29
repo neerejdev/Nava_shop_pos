@@ -1207,6 +1207,17 @@
               <label class="input-label">Brand / Company</label>
               <input type="text" id="newProdBrand" class="input-control" placeholder="e.g. KTC, NATCO, TRS" list="shopBrandsList" oninput="updateFormattedNamePreview(); checkSufficientInfoAndGuideUser();">
               <datalist id="shopBrandsList">
+                <option value="JACME"></option>
+                <option value="MAGIC TASTES"></option>
+                <option value="MALABAR TASTE"></option>
+                <option value="MALABAR TREAT"></option>
+                <option value="MALABAR"></option>
+                <option value="DAILY FRESH"></option>
+                <option value="PERIYAR"></option>
+                <option value="THEKKANS"></option>
+                <option value="DOUBLE HORSE"></option>
+                <option value="PAVIZHAM"></option>
+                <option value="NIRAPARA"></option>
                 <option value="NATCO"></option>
                 <option value="TRS"></option>
                 <option value="HEERA"></option>
@@ -1273,6 +1284,9 @@
               <label class="input-label">Weight / Size</label>
               <input type="text" id="newProdWeight" class="input-control" placeholder="e.g. 500G" list="shopWeightsList" oninput="updateFormattedNamePreview(); checkSufficientInfoAndGuideUser();">
               <datalist id="shopWeightsList">
+                <option value="300G"></option>
+                <option value="350G"></option>
+                <option value="400G"></option>
                 <option value="500G"></option>
                 <option value="1KG"></option>
                 <option value="2KG"></option>
@@ -2267,6 +2281,11 @@
       }
     }
 
+    function cleanApiKey(k) {
+      if (!k) return '';
+      return String(k).replace(/[\s\r\n\t"']/g, '').replace(/\.+$/, '');
+    }
+
     function getShopDefaultKey() {
       try {
         return atob('QVEuQWI4Uk42THo0WXd3c01ZQnVVYW5KQTRRYmhBYnBfbmFGQ2xHN0Z5Vk5uTW1wQlR0WFE=');
@@ -2276,9 +2295,18 @@
     }
 
     function getGeminiApiKey() {
-      const stored = localStorage.getItem('gemini_api_key');
-      if (stored && stored.trim()) return stored.trim();
       const defKey = getShopDefaultKey();
+      let stored = localStorage.getItem('gemini_api_key');
+      if (stored) {
+        stored = cleanApiKey(stored);
+        const defPrefix = atob('QVEuQWI4Uk42THo0');
+        // If stored key has invalid format, length, or is a corrupted copy of the shop key, reset to defKey:
+        if (!stored || stored.length < 30 || (!stored.startsWith('AQ.') && !stored.startsWith('AIzaSy')) || stored.includes('..') || stored.startsWith(defPrefix)) {
+          stored = defKey;
+          try { localStorage.setItem('gemini_api_key', defKey); } catch (e) {}
+        }
+        return stored;
+      }
       try {
         localStorage.setItem('gemini_api_key', defKey);
       } catch (e) {}
@@ -2286,19 +2314,22 @@
     }
 
     function saveGeminiApiKey() {
-      const key = geminiApiKeyInput.value.trim();
+      let key = cleanApiKey(geminiApiKeyInput.value);
       const defKey = getShopDefaultKey();
-      if (!key) {
+      const defPrefix = atob('QVEuQWI4Uk42THo0');
+      if (!key || key === defKey || key.startsWith(defPrefix)) {
         localStorage.setItem('gemini_api_key', defKey);
+        geminiApiKeyInput.value = defKey;
         showToast('Reset to shop default API key', 'success');
       } else {
         localStorage.setItem('gemini_api_key', key);
+        geminiApiKeyInput.value = key;
         showToast('✓ Gemini API Key saved!', 'success');
-        if (capturedPhotos.length > 0) {
-          analyzePhotosWithAI();
-        }
       }
       aiKeyBox.style.display = 'none';
+      if (capturedPhotos.length > 0) {
+        analyzePhotosWithAI();
+      }
     }
 
     function scanBarcodeForNewProduct() {
@@ -2390,7 +2421,7 @@
         return;
       }
 
-      const apiKey = getGeminiApiKey();
+      let apiKey = getGeminiApiKey();
       if (!apiKey) {
         aiKeyBox.style.display = 'block';
         geminiApiKeyInput.focus();
@@ -2400,12 +2431,14 @@
 
       const originalBtnHtml = analyzeAiBtn.innerHTML;
       analyzeAiBtn.disabled = true;
-      analyzeAiBtn.innerHTML = `<span>⏳ Reading photo (${capturedPhotos.length})...</span>`;
-      showToast('🔍 AI reading photo & updating fields below...', '');
+      analyzeAiBtn.innerHTML = `<span>⏳ AI Reading photo (${capturedPhotos.length})...</span>`;
+      showToast('🔍 AI analyzing photo & updating fields below...', '');
 
       aiInfoBanner.className = 'ai-info-banner warning';
       aiInfoBanner.style.display = 'block';
-      aiInfoBanner.innerHTML = `⚡ <strong>Analyzing photo (${capturedPhotos.length})...</strong> Checking brand, product name, weight & shelf price...`;
+      aiInfoBanner.innerHTML = `⚡ <strong>Analyzing photo (${capturedPhotos.length})...</strong> Extracting brand, product name, weight & price...`;
+
+      let lastErrorDetail = '';
 
       try {
         const parts = [];
@@ -2422,16 +2455,24 @@ Context currently in form:
 
 Master Sheet Naming Rule:
 - Format: [BRAND] [PRODUCT NAME/VARIANT] [WEIGHT/SIZE] in ALL UPPERCASE.
-- Examples: "JACME VEG PUFFS 300G", "MAGIC TASTES BUTTER CHICKEN 350G", "KTC CORN OIL 1L", "WALKERS TOMATO KETCHUP 70G", "NATCO BASMATI MAMRA 454G".
+- Examples: "JACME VEG. PUFFS 300G", "MAGIC TASTES BUTTER CHICKEN 350G", "KTC CORN OIL 1L", "WALKERS TOMATO KETCHUP 70G", "NATCO BASMATI MAMRA 454G".
 
 Task:
 Carefully inspect all parts of the image:
-1. "brand": Look for brand logo or manufacturer name in UPPERCASE (e.g. "JACME", "MAGIC TASTES", "MALABAR TREAT", "KTC", "NATCO", "AACHI", "HALDIRAM'S"). Can be stylized, in a badge, or in lowercase on pack.
-2. "productName": Product title, dish, flavor, or description in UPPERCASE (e.g. "VEG PUFFS", "BUTTER CHICKEN", "CORN OIL"). Strip out foreign script subtitles or secondary text. Do not repeat brand prefix.
-3. "weight": Package net weight, volume, or count in UPPERCASE (e.g. "300G", "350G", "1KG", "500ML", "10'S", "/KG"). Look in corners, front, or back.
-4. "price": Numeric price in GBP (e.g. 4.99, 1.25, 1.99). Look on round yellow/red price stickers (e.g. "£4.99 RRP"), printed on pack, or on shelf rack tags.
+1. "brand": Look for brand logo or manufacturer name in UPPERCASE:
+   - e.g. "JACME", "MAGIC TASTES", "MALABAR TASTE", "MALABAR TREAT", "DAILY FRESH", "PERIYAR", "THEKKANS", "BRAHMINS", "DOUBLE HORSE", "PAVIZHAM", "NIRAPARA", "EASTERN", "AACHI", "KTC", "NATCO", "TRS", "HEERA", "HALDIRAM'S".
+   - The brand name may be stylized, in a top badge, in lowercase (e.g. 'jacme' -> 'JACME'), or near a tagline (e.g. 'MAGIC TASTES Where Taste Creates Magic' -> 'MAGIC TASTES').
+2. "productName": Product title, dish, flavor, or description in UPPERCASE:
+   - e.g. "VEG. PUFFS", "BUTTER CHICKEN", "CHICKEN TIKKA MASALA", "CORN OIL".
+   - Strip out regional foreign script subtitles (e.g. Malayalam, Hindi, Tamil script) and serving suggestions.
+   - Do NOT repeat the brand prefix.
+3. "weight": Package net weight, volume, or count in UPPERCASE:
+   - e.g. "300G", "350G", "1KG", "500ML", "10'S", "/KG".
+   - Check bottom corners (e.g. '300g / Net Wt. 10.50oz', '350g', '500g').
+4. "price": Numeric price in GBP (e.g. 4.99, 1.25, 1.99):
+   - Look on round yellow/red price stickers (e.g. '£4.99 RRP'), price printed on pack, or on shelf rack tags.
 5. "barcode": Barcode digits if visible in photos, otherwise null.
-6. "formattedName": Assembled: [BRAND] [PRODUCT NAME] [WEIGHT] (e.g. "JACME VEG PUFFS 300G", "MAGIC TASTES BUTTER CHICKEN 350G").
+6. "formattedName": Assembled: [BRAND] [PRODUCT NAME] [WEIGHT] (e.g. "JACME VEG. PUFFS 300G", "MAGIC TASTES BUTTER CHICKEN 350G").
 
 Return ONLY a valid JSON object matching this schema:
 {
@@ -2445,25 +2486,30 @@ Return ONLY a valid JSON object matching this schema:
         });
 
         for (const photo of capturedPhotos) {
-          const base64Data = photo.dataUrl.replace(/^data:image\/\w+;base64,/, '');
+          let b64 = photo.dataUrl || '';
+          const commaIdx = b64.indexOf(',');
+          if (commaIdx !== -1) {
+            b64 = b64.substring(commaIdx + 1);
+          }
+          b64 = b64.replace(/[\s\r\n]/g, '');
+          if (!b64) continue;
           parts.push({
             inlineData: {
               mimeType: 'image/jpeg',
-              data: base64Data
+              data: b64
             }
           });
         }
 
-        // 1. Try healthy Google models: gemini-3-flash-preview, then gemini-3.6-flash with retry
-        const modelsToTry = ['gemini-3-flash-preview', 'gemini-3.6-flash'];
+        // 1. Try healthy Google models: gemini-3-flash-preview, gemini-3.6-flash, gemini-3.5-flash-lite
+        const modelsToTry = ['gemini-3-flash-preview', 'gemini-3.6-flash', 'gemini-3.5-flash-lite'];
         let successResult = null;
 
         for (const modelName of modelsToTry) {
           for (let attempt = 0; attempt < 2; attempt++) {
             try {
               if (attempt > 0) {
-                // If retrying after temporary 503 spike, wait 1.2s
-                await new Promise(r => setTimeout(r, 1200));
+                await new Promise(r => setTimeout(r, 1000));
               }
               const controller = new AbortController();
               const timeoutId = setTimeout(() => controller.abort(), 16000);
@@ -2480,6 +2526,16 @@ Return ONLY a valid JSON object matching this schema:
                 })
               });
               clearTimeout(timeoutId);
+
+              if (r.status === 401 || r.status === 403) {
+                console.warn('API Key rejected (HTTP ' + r.status + '). Re-authenticating with shop default key...');
+                const defKey = getShopDefaultKey();
+                localStorage.setItem('gemini_api_key', defKey);
+                apiKey = defKey;
+                lastErrorDetail = 'API key re-authenticated';
+                continue;
+              }
+
               if (r.ok) {
                 const data = await r.json();
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -2487,8 +2543,12 @@ Return ONLY a valid JSON object matching this schema:
                   successResult = JSON.parse(text);
                   break;
                 }
+              } else {
+                lastErrorDetail = `HTTP ${r.status} (${modelName})`;
+                console.warn(`Model ${modelName} returned HTTP ${r.status}`);
               }
             } catch (modelErr) {
+              lastErrorDetail = modelErr.message || String(modelErr);
               console.warn(`Model ${modelName} attempt ${attempt + 1} error:`, modelErr);
             }
           }
@@ -2497,30 +2557,31 @@ Return ONLY a valid JSON object matching this schema:
 
         if (successResult) {
           applyAiResult(successResult);
-          showToast('✓ Recognized details! Updated fields below.', 'success');
+          showToast('✓ AI recognized product details!', 'success');
         } else {
-          // Cloud models busy or 503: Automatically run in-browser local OCR fallback!
-          await analyzeWithOnDeviceOCR(capturedPhotos);
+          // Cloud models busy or network issue: run in-browser local OCR fallback
+          console.warn('Cloud AI unavailable (' + lastErrorDetail + '), falling back to local OCR');
+          await analyzeWithOnDeviceOCR(capturedPhotos, lastErrorDetail);
         }
       } catch (err) {
         console.error('AI Analysis failed:', err);
-        await analyzeWithOnDeviceOCR(capturedPhotos);
+        await analyzeWithOnDeviceOCR(capturedPhotos, err.message);
       } finally {
         analyzeAiBtn.disabled = false;
         analyzeAiBtn.innerHTML = originalBtnHtml;
       }
     }
 
-    async function analyzeWithOnDeviceOCR(photos) {
+    async function analyzeWithOnDeviceOCR(photos, cloudErrMsg) {
       if (typeof Tesseract === 'undefined') {
-        showToast('ℹ️ Cloud AI busy. Enter details below or scan barcode.', '');
+        showToast('ℹ️ Please enter details below or scan barcode', '');
         checkSufficientInfoAndGuideUser();
         return;
       }
 
       aiInfoBanner.className = 'ai-info-banner warning';
       aiInfoBanner.style.display = 'block';
-      aiInfoBanner.innerHTML = '⚡ <strong>Cloud AI busy — Reading text locally on your device...</strong>';
+      aiInfoBanner.innerHTML = '⚡ <strong>Reading photo locally on your device...</strong>';
 
       try {
         let combinedText = '';
@@ -2575,14 +2636,15 @@ Return ONLY a valid JSON object matching this schema:
       // 3. Match Brand against Nava Shop top brands
       if (!newProdBrand.value) {
         const topBrands = [
-          "JACME", "MAGIC TASTES", "MALABAR TREAT", "MALABAR", "NATCO", "TRS", "HEERA", "FUDCO", "KTC", 
-          "HALDIRAM'S", "SHANKAR", "MAYURI", "JAIMIN", "AYTAC", "NESTLE", "CADBURY", 
+          "JACME", "MAGIC TASTES", "MALABAR TASTE", "MALABAR TREAT", "MALABAR", "DAILY FRESH", 
+          "PERIYAR", "THEKKANS", "DOUBLE HORSE", "PAVIZHAM", "NIRAPARA", "NATCO", "TRS", "HEERA", 
+          "FUDCO", "KTC", "HALDIRAM'S", "SHANKAR", "MAYURI", "JAIMIN", "AYTAC", "NESTLE", "CADBURY", 
           "AACHI", "LAILA", "EAST END", "SHAN", "VISWAS", "UTHRA", "ASHOKA", "NIHARTI", 
           "COFRESH", "RAMDEV", "HIMALAYA", "SARAS", "HARIBO", "RUBICON", "LUCOZADE", "DABUR", 
           "NIRU", "COCA-COLA", "FANTA", "VATIKA", "GITS", "BRAHMINS", "PEPSI", "LAZIZA", 
           "BRITANNIA", "MTR", "RAJAH", "MAGGI", "PRIYA", "WALKERS", "EASTERN", "AJMI", 
           "TILDA", "EVEREST", "SHANA", "MELAM", "BIKAJI", "MDH", "ROYAL", "PARLE", "PRAN", 
-          "CHING'S", "WEIKFIELD", "NATIONAL", "TATA", "PATAK'S", "PERIYAR", "THEKKANS"
+          "CHING'S", "WEIKFIELD", "NATIONAL", "TATA", "PATAK'S"
         ];
         for (const b of topBrands) {
           const escaped = b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -2596,17 +2658,23 @@ Return ONLY a valid JSON object matching this schema:
 
       // 4. Candidate Product Name if empty
       if (!newProdName.value) {
-        const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 3 && l.length < 35);
-        for (const line of lines) {
-          const lUpper = line.toUpperCase();
-          if (lUpper.includes('PUFF') || lUpper.includes('CHICKEN') || lUpper.includes('CURRY') || 
-              lUpper.includes('MASALA') || lUpper.includes('PAROTTA') || lUpper.includes('POROTTA') ||
-              lUpper.includes('OIL') || lUpper.includes('RICE') || lUpper.includes('CRISP') ||
-              lUpper.includes('FLOUR') || lUpper.includes('DAL') || lUpper.includes('LENTIL')) {
-            const cleaned = line.replace(/[^a-zA-Z0-9.\s]/g, '').trim().toUpperCase();
-            if (cleaned.length > 3) {
-              newProdName.value = cleaned;
-              break;
+        if (upper.includes('BUTTER CHICKEN')) {
+          newProdName.value = 'BUTTER CHICKEN';
+        } else if (upper.includes('VEG') && upper.includes('PUFF')) {
+          newProdName.value = 'VEG. PUFFS';
+        } else {
+          const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 3 && l.length < 35);
+          for (const line of lines) {
+            const lUpper = line.toUpperCase();
+            if (lUpper.includes('PUFF') || lUpper.includes('CHICKEN') || lUpper.includes('CURRY') || 
+                lUpper.includes('MASALA') || lUpper.includes('PAROTTA') || lUpper.includes('POROTTA') ||
+                lUpper.includes('OIL') || lUpper.includes('RICE') || lUpper.includes('CRISP') ||
+                lUpper.includes('FLOUR') || lUpper.includes('DAL') || lUpper.includes('LENTIL')) {
+              const cleaned = line.replace(/[^a-zA-Z0-9.\s]/g, '').trim().toUpperCase();
+              if (cleaned.length > 3) {
+                newProdName.value = cleaned;
+                break;
+              }
             }
           }
         }
@@ -2617,27 +2685,29 @@ Return ONLY a valid JSON object matching this schema:
     }
 
     function applyAiResult(res) {
-      // Update whatever was extracted into the fields below
-      if (res.brand) newProdBrand.value = res.brand.toUpperCase();
-      if (res.productName) newProdName.value = res.productName.toUpperCase();
-      if (res.weight) newProdWeight.value = res.weight.toUpperCase();
+      if (!res) return;
+      if (res.brand) newProdBrand.value = String(res.brand).trim().toUpperCase();
+      if (res.productName) newProdName.value = String(res.productName).trim().toUpperCase();
+      if (res.weight) newProdWeight.value = String(res.weight).trim().toUpperCase();
 
       if (res.formattedName && res.formattedName.trim().length > 3) {
-        newProdFullName.value = res.formattedName.toUpperCase();
+        newProdFullName.value = String(res.formattedName).trim().toUpperCase();
       } else {
         updateFormattedNamePreview();
       }
 
       if (res.barcode && !newProdBarcode.value) {
-        newProdBarcode.value = res.barcode;
+        newProdBarcode.value = String(res.barcode).trim();
         onNewProdBarcodeChange();
       }
 
-      if (res.price != null && !isNaN(res.price) && res.price > 0) {
-        newProdPrice.value = Number(res.price).toFixed(2);
+      if (res.price != null) {
+        const p = parseFloat(res.price);
+        if (!isNaN(p) && p > 0) {
+          newProdPrice.value = p.toFixed(2);
+        }
       }
 
-      // Check if we have sufficient info and guide the user on what is needed next
       checkSufficientInfoAndGuideUser();
     }
 
