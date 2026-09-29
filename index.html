@@ -2422,24 +2422,24 @@ Context currently in form:
 
 Master Sheet Naming Rule:
 - Format: [BRAND] [PRODUCT NAME/VARIANT] [WEIGHT/SIZE] in ALL UPPERCASE.
-- Examples: "KTC CORN OIL 1L", "WALKERS TOMATO KETCHUP 70G", "NATCO BASMATI MAMRA 454G", "HARIBO PEACHES 100G", "FRESH MUTTON KIDNEY /KG".
+- Examples: "JACME VEG PUFFS 300G", "MAGIC TASTES BUTTER CHICKEN 350G", "KTC CORN OIL 1L", "WALKERS TOMATO KETCHUP 70G", "NATCO BASMATI MAMRA 454G".
 
 Task:
-Extract whatever new or confirmed details are visible in the photo(s):
-1. "brand": Brand or company name in UPPERCASE (e.g. "KTC", "WALKERS", "HARIBO"). If not visible, return existing brand or "".
-2. "productName": Product title or flavor in UPPERCASE (e.g. "TOMATO KETCHUP CRISPS", "CORN OIL"). Do not repeat brand prefix if separable. If not visible, return existing or "".
-3. "weight": Package weight, volume, or count in UPPERCASE (e.g. "70G", "1KG", "500ML", "330ML", "10'S", "/KG"). If not visible, return existing or "".
-4. "price": Numeric price in GBP (e.g. 1.25, 1.99) if visible on a shelf rack price tag or printed on pack. If not visible, return null.
+Carefully inspect all parts of the image:
+1. "brand": Look for brand logo or manufacturer name in UPPERCASE (e.g. "JACME", "MAGIC TASTES", "MALABAR TREAT", "KTC", "NATCO", "AACHI", "HALDIRAM'S"). Can be stylized, in a badge, or in lowercase on pack.
+2. "productName": Product title, dish, flavor, or description in UPPERCASE (e.g. "VEG PUFFS", "BUTTER CHICKEN", "CORN OIL"). Strip out foreign script subtitles or secondary text. Do not repeat brand prefix.
+3. "weight": Package net weight, volume, or count in UPPERCASE (e.g. "300G", "350G", "1KG", "500ML", "10'S", "/KG"). Look in corners, front, or back.
+4. "price": Numeric price in GBP (e.g. 4.99, 1.25, 1.99). Look on round yellow/red price stickers (e.g. "£4.99 RRP"), printed on pack, or on shelf rack tags.
 5. "barcode": Barcode digits if visible in photos, otherwise null.
-6. "formattedName": Assembled: [BRAND] [PRODUCT NAME] [WEIGHT] (e.g. "WALKERS TOMATO KETCHUP CRISPS 70G").
+6. "formattedName": Assembled: [BRAND] [PRODUCT NAME] [WEIGHT] (e.g. "JACME VEG PUFFS 300G", "MAGIC TASTES BUTTER CHICKEN 350G").
 
 Return ONLY a valid JSON object matching this schema:
 {
   "brand": "...",
   "productName": "...",
   "weight": "...",
-  "price": 1.99,
-  "barcode": "...",
+  "price": 4.99,
+  "barcode": null,
   "formattedName": "..."
 }`
         });
@@ -2454,43 +2454,50 @@ Return ONLY a valid JSON object matching this schema:
           });
         }
 
-        // 1. Try healthy Google models in order: gemini-3-flash-preview, then gemini-3.6-flash
+        // 1. Try healthy Google models: gemini-3-flash-preview, then gemini-3.6-flash with retry
         const modelsToTry = ['gemini-3-flash-preview', 'gemini-3.6-flash'];
         let successResult = null;
 
         for (const modelName of modelsToTry) {
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 6000);
-            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              signal: controller.signal,
-              body: JSON.stringify({
-                contents: [{ parts: parts }],
-                generationConfig: {
-                  temperature: 0.1,
-                  responseMimeType: 'application/json'
-                }
-              })
-            });
-            clearTimeout(timeoutId);
-            if (r.ok) {
-              const data = await r.json();
-              const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (text) {
-                successResult = JSON.parse(text);
-                break;
+          for (let attempt = 0; attempt < 2; attempt++) {
+            try {
+              if (attempt > 0) {
+                // If retrying after temporary 503 spike, wait 1.2s
+                await new Promise(r => setTimeout(r, 1200));
               }
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 16000);
+              const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: controller.signal,
+                body: JSON.stringify({
+                  contents: [{ parts: parts }],
+                  generationConfig: {
+                    temperature: 0.1,
+                    responseMimeType: 'application/json'
+                  }
+                })
+              });
+              clearTimeout(timeoutId);
+              if (r.ok) {
+                const data = await r.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                  successResult = JSON.parse(text);
+                  break;
+                }
+              }
+            } catch (modelErr) {
+              console.warn(`Model ${modelName} attempt ${attempt + 1} error:`, modelErr);
             }
-          } catch (modelErr) {
-            console.warn(`Model ${modelName} trial error:`, modelErr);
           }
+          if (successResult) break;
         }
 
         if (successResult) {
           applyAiResult(successResult);
-          showToast('✓ AI recognized details! Updated fields below.', 'success');
+          showToast('✓ Recognized details! Updated fields below.', 'success');
         } else {
           // Cloud models busy or 503: Automatically run in-browser local OCR fallback!
           await analyzeWithOnDeviceOCR(capturedPhotos);
@@ -2541,9 +2548,10 @@ Return ONLY a valid JSON object matching this schema:
     function parseAndApplyOcrText(rawText) {
       const upper = rawText.toUpperCase();
 
-      // 1. Extract Price (£X.XX or X.XX)
+      // 1. Extract Price (£X.XX or X.XX or RRP)
       if (!newProdPrice.value) {
-        const priceMatch = rawText.match(/(?:£|GBP|PRICE|\b)\s*(\d+[.,]\d{2})\b/i);
+        const priceMatch = rawText.match(/(?:£|GBP|PRICE|RRP|\b)\s*(\d+[.,]\d{2})(?:\s*RRP)?/i) ||
+                           rawText.match(/(\d+[.,]\d{2})\s*RRP/i);
         if (priceMatch) {
           const p = parseFloat(priceMatch[1].replace(',', '.'));
           if (!isNaN(p) && p > 0.05 && p < 100) {
@@ -2552,11 +2560,13 @@ Return ONLY a valid JSON object matching this schema:
         }
       }
 
-      // 2. Extract Weight (e.g. 500G, 1KG, 1L, 330ML, 454G, /KG)
+      // 2. Extract Weight (e.g. 300G, 350G, 500G, 1KG, 1L, 330ML, 454G, /KG)
       if (!newProdWeight.value) {
-        const weightMatch = upper.match(/\b(\d+(?:\.\d+)?)\s*(KG|G|L|ML|CL|GM|GMS)\b/);
+        const weightMatch = upper.match(/\b(\d+(?:\.\d+)?)\s*(KG|G|L|ML|CL|GM|GMS|OZ|LBS)\b/);
         if (weightMatch) {
-          newProdWeight.value = (weightMatch[1] + weightMatch[2]).replace(/\s+/g, '');
+          let unit = weightMatch[2];
+          if (unit === 'GM' || unit === 'GMS') unit = 'G';
+          newProdWeight.value = (weightMatch[1] + unit).replace(/\s+/g, '');
         } else if (upper.includes('/KG') || upper.includes('PER KG')) {
           newProdWeight.value = '/KG';
         }
@@ -2565,14 +2575,14 @@ Return ONLY a valid JSON object matching this schema:
       // 3. Match Brand against Nava Shop top brands
       if (!newProdBrand.value) {
         const topBrands = [
-          "NATCO", "TRS", "HEERA", "FUDCO", "KTC", "HALDIRAM'S", "SHANKAR", "MAYURI", 
-          "JAIMIN", "AYTAC", "JACME", "NESTLE", "CADBURY", "AACHI", "LAILA", "EAST END", 
-          "SHAN", "VISWAS", "UTHRA", "ASHOKA", "NIHARTI", "COFRESH", "RAMDEV", "HIMALAYA", 
-          "SARAS", "HARIBO", "RUBICON", "LUCOZADE", "DABUR", "NIRU", "COCA-COLA", "FANTA", 
-          "VATIKA", "GITS", "BRAHMINS", "PEPSI", "LAZIZA", "BRITANNIA", "MTR", "RAJAH", 
-          "MAGGI", "PRIYA", "WALKERS", "EASTERN", "AJMI", "TILDA", "EVEREST", "SHANA", 
-          "MELAM", "BIKAJI", "MDH", "ROYAL", "PARLE", "PRAN", "CHING'S", "WEIKFIELD", 
-          "NATIONAL", "TATA", "PATAK'S"
+          "JACME", "MAGIC TASTES", "MALABAR TREAT", "MALABAR", "NATCO", "TRS", "HEERA", "FUDCO", "KTC", 
+          "HALDIRAM'S", "SHANKAR", "MAYURI", "JAIMIN", "AYTAC", "NESTLE", "CADBURY", 
+          "AACHI", "LAILA", "EAST END", "SHAN", "VISWAS", "UTHRA", "ASHOKA", "NIHARTI", 
+          "COFRESH", "RAMDEV", "HIMALAYA", "SARAS", "HARIBO", "RUBICON", "LUCOZADE", "DABUR", 
+          "NIRU", "COCA-COLA", "FANTA", "VATIKA", "GITS", "BRAHMINS", "PEPSI", "LAZIZA", 
+          "BRITANNIA", "MTR", "RAJAH", "MAGGI", "PRIYA", "WALKERS", "EASTERN", "AJMI", 
+          "TILDA", "EVEREST", "SHANA", "MELAM", "BIKAJI", "MDH", "ROYAL", "PARLE", "PRAN", 
+          "CHING'S", "WEIKFIELD", "NATIONAL", "TATA", "PATAK'S", "PERIYAR", "THEKKANS"
         ];
         for (const b of topBrands) {
           const escaped = b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -2580,6 +2590,24 @@ Return ONLY a valid JSON object matching this schema:
           if (regex.test(upper)) {
             newProdBrand.value = b;
             break;
+          }
+        }
+      }
+
+      // 4. Candidate Product Name if empty
+      if (!newProdName.value) {
+        const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 3 && l.length < 35);
+        for (const line of lines) {
+          const lUpper = line.toUpperCase();
+          if (lUpper.includes('PUFF') || lUpper.includes('CHICKEN') || lUpper.includes('CURRY') || 
+              lUpper.includes('MASALA') || lUpper.includes('PAROTTA') || lUpper.includes('POROTTA') ||
+              lUpper.includes('OIL') || lUpper.includes('RICE') || lUpper.includes('CRISP') ||
+              lUpper.includes('FLOUR') || lUpper.includes('DAL') || lUpper.includes('LENTIL')) {
+            const cleaned = line.replace(/[^a-zA-Z0-9.\s]/g, '').trim().toUpperCase();
+            if (cleaned.length > 3) {
+              newProdName.value = cleaned;
+              break;
+            }
           }
         }
       }
