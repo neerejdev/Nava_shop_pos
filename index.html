@@ -1137,8 +1137,20 @@
               📷 Scan Barcode
             </button>
           </div>
-          <div style="font-size: 11px; color: #059669; margin-top: 5px;">
-            💡 Tip: Scanning the barcode instantly auto-fills Brand, Name & Weight from global grocery database (works even when AI is busy)!
+          <div id="existingBarcodeCard" style="display: none; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 12px; margin-top: 8px;">
+            <div style="font-weight: 700; color: #991b1b; font-size: 13px; margin-bottom: 2px;">⚠️ Barcode already exists in sheet!</div>
+            <div style="font-size: 12px; color: #7f1d1d; margin-bottom: 8px;" id="existingBarcodeInfo">
+              Assigned to: <strong id="existingProdName">PRODUCT</strong><br>
+              Code: <span id="existingProdCode">N000...</span> | Current Price: <strong id="existingProdPrice">£0.00</strong>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-primary" onclick="useExistingProductForPriceUpdate()" style="flex: 1; padding: 7px 12px; font-size: 12px; background: #059669; border-color: #047857;">
+                🔄 Update Price of Existing Item
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="dismissExistingBarcodeWarning()" style="padding: 7px 10px; font-size: 12px;">
+                Keep as New Item
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1182,7 +1194,7 @@
 
           <!-- AI Magic Analyze Button -->
           <button type="button" class="btn-ai-magic" id="analyzeAiBtn" onclick="analyzePhotosWithAI()" style="width: 100%;">
-            <span>✨ Analyze Photos (Cloud AI + Local OCR)</span>
+            <span>✨ Analyze Photos</span>
           </button>
 
           <!-- AI Key Input Section (Collapsible) -->
@@ -1340,7 +1352,7 @@
         </div>
 
         <div style="display: flex; gap: 10px;">
-          <button type="button" class="btn btn-primary" style="flex: 2; padding: 14px; font-size: 15px;" onclick="confirmSaveNewProduct()">
+          <button type="button" class="btn btn-primary" id="saveNewProdBtn" style="flex: 2; padding: 14px; font-size: 15px;" onclick="confirmSaveNewProduct()">
             💾 Save & Add to Master Sheet
           </button>
           <button type="button" class="btn btn-secondary" style="flex: 1; padding: 14px;" onclick="closeAddProductModal()">
@@ -1356,7 +1368,7 @@
   <div class="modal-overlay" id="syncNoticeModal" style="display: none;">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>✅ Saved to POS Master List!</h3>
+        <h3 id="syncNoticeHeader">✅ Saved to POS Master List!</h3>
         <button class="close-modal-btn" onclick="closeSyncNoticeModal()">✕</button>
       </div>
       <div class="modal-body">
@@ -1488,12 +1500,17 @@
     const newProdWeight = document.getElementById('newProdWeight');
     const newProdName = document.getElementById('newProdName');
     const newProdFullName = document.getElementById('newProdFullName');
+    const existingBarcodeCard = document.getElementById('existingBarcodeCard');
+    const existingBarcodeInfo = document.getElementById('existingBarcodeInfo');
+    const saveNewProdBtn = document.getElementById('saveNewProdBtn');
 
     let currentPricingMode = 'units'; // 'weight' or 'units'
     let capturedPhotos = [];
     let currentCaptureType = 'front';
     let isScanningForNewProduct = false;
     let lastSearchQuery = '';
+    let isUpdatingExistingProduct = false;
+    let existingProductToUpdate = null;
 
     // Init
     rebuildIndexes();
@@ -2237,6 +2254,13 @@
       newProdWeight.value = '';
       newProdName.value = '';
       newProdFullName.value = '';
+      isUpdatingExistingProduct = false;
+      existingProductToUpdate = null;
+      if (existingBarcodeCard) existingBarcodeCard.style.display = 'none';
+      if (saveNewProdBtn) {
+        saveNewProdBtn.textContent = '💾 Save & Add to Master Sheet';
+        saveNewProdBtn.style.background = '';
+      }
     }
 
     function triggerPhotoCapture(type) {
@@ -2412,21 +2436,79 @@
       if (!bc) {
         barcodeStatusTag.textContent = 'Optional for loose produce';
         barcodeStatusTag.style.color = '#6b7280';
+        if (existingBarcodeCard) existingBarcodeCard.style.display = 'none';
         return;
       }
 
       if (barcodeMap.has(bc)) {
         const existing = barcodeMap.get(bc);
-        barcodeStatusTag.textContent = `⚠️ In sheet: ${existing.name}`;
+        barcodeStatusTag.textContent = `⚠️ Exists: ${existing.name}`;
         barcodeStatusTag.style.color = '#b91c1c';
+
+        if (existingBarcodeCard) {
+          existingBarcodeCard.style.display = 'block';
+          existingBarcodeCard.style.background = '#fef2f2';
+          existingBarcodeCard.style.borderColor = '#fecaca';
+          if (existingBarcodeInfo) {
+            existingBarcodeInfo.innerHTML = `
+              Assigned to: <strong id="existingProdName">${escapeHtml(existing.name)}</strong><br>
+              Code: <span id="existingProdCode">${existing.code}</span> | Current Price: <strong id="existingProdPrice">${formatPrice(existing.price)}</strong>
+            `;
+          }
+        }
         return;
       }
 
+      if (existingBarcodeCard) existingBarcodeCard.style.display = 'none';
       barcodeStatusTag.textContent = '✓ New Barcode';
       barcodeStatusTag.style.color = '#059669';
 
       // Check Open Food Facts free database in background
       lookupOpenFoodFacts(bc);
+    }
+
+    function useExistingProductForPriceUpdate() {
+      const bc = newProdBarcode.value.trim();
+      const existing = barcodeMap.get(bc);
+      if (!existing) return;
+
+      isUpdatingExistingProduct = true;
+      existingProductToUpdate = existing;
+
+      newProdCode.value = existing.code;
+      newProdFullName.value = existing.name;
+      if (!newProdPrice.value) {
+        newProdPrice.value = Number(existing.price).toFixed(2);
+      }
+
+      if (saveNewProdBtn) {
+        saveNewProdBtn.textContent = `💾 Update Price in Sheet (${formatPrice(newProdPrice.value || existing.price)})`;
+        saveNewProdBtn.style.background = '#059669';
+      }
+
+      if (existingBarcodeCard) {
+        existingBarcodeCard.style.background = '#ecfdf5';
+        existingBarcodeCard.style.borderColor = '#a7f3d0';
+        if (existingBarcodeInfo) {
+          existingBarcodeInfo.innerHTML = `
+            <span style="color: #065f46; font-size: 13px;">Selected for price update: <strong>${escapeHtml(existing.name)}</strong> (Code: <strong>${existing.code}</strong>, Current: <strong>${formatPrice(existing.price)}</strong>)</span>
+          `;
+        }
+      }
+
+      showToast(`Selected "${existing.name}". Enter new price and tap Update!`, 'success');
+      newProdPrice.focus();
+      newProdPrice.select();
+    }
+
+    function dismissExistingBarcodeWarning() {
+      isUpdatingExistingProduct = false;
+      existingProductToUpdate = null;
+      if (existingBarcodeCard) existingBarcodeCard.style.display = 'none';
+      if (saveNewProdBtn) {
+        saveNewProdBtn.textContent = '💾 Save & Add to Master Sheet';
+        saveNewProdBtn.style.background = '';
+      }
     }
 
     async function lookupOpenFoodFacts(bc) {
@@ -2892,10 +2974,103 @@ Return ONLY a valid JSON object matching this schema:
         code = getNextProductCode(PRODUCTS_DATA);
       }
 
-      // Check if barcode already exists
+      // Check if updating existing product OR if barcode already exists
+      if (isUpdatingExistingProduct && existingProductToUpdate) {
+        existingProductToUpdate.price = price;
+        if (name && name.length > 2) {
+          existingProductToUpdate.name = name;
+        }
+        rebuildIndexes();
+
+        try {
+          localStorage.setItem('cached_sheet_data', JSON.stringify(PRODUCTS_DATA));
+        } catch (e) {}
+
+        const updateItem = {
+          code: existingProductToUpdate.code,
+          name: existingProductToUpdate.name,
+          price: price,
+          barcode: existingProductToUpdate.barcode || barcode || '',
+          isUpdate: true
+        };
+
+        try {
+          const pending = JSON.parse(localStorage.getItem('pending_sheet_additions') || '[]');
+          pending.unshift(updateItem);
+          localStorage.setItem('pending_sheet_additions', JSON.stringify(pending));
+        } catch (e) {}
+
+        playBeepSound();
+        vibrateDevice();
+        closeAddProductModal();
+        selectProduct(existingProductToUpdate);
+
+        const webhookUrl = localStorage.getItem('google_apps_script_url') || (sheetWebhookInput ? sheetWebhookInput.value.trim() : '');
+        if (webhookUrl) {
+          showToast(`Updating ${existingProductToUpdate.name} in Google Sheet...`, '');
+          fetch(webhookUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateItem)
+          }).then(() => {
+            showToast(`✅ Price updated to ${formatPrice(price)} in Google Sheet!`, 'success');
+          }).catch(err => {
+            showToast(`⚠️ Updated locally, check Webhook`, 'warning');
+          });
+        } else {
+          showSyncNoticeModal(updateItem, true);
+        }
+        return;
+      }
+
       if (barcode && barcodeMap.has(barcode)) {
         const existing = barcodeMap.get(barcode);
-        if (!confirm(`⚠️ Barcode ${barcode} is already assigned to:\n"${existing.name}"\n\nDo you want to save anyway?`)) {
+        const shouldUpdate = confirm(`⚠️ Barcode ${barcode} already belongs to:\n"${existing.name}" (Current: ${formatPrice(existing.price)})\n\n• Click OK to UPDATE its price to ${formatPrice(price)} in your sheet\n• Click Cancel to save as a duplicate new item.`);
+        if (shouldUpdate) {
+          existing.price = price;
+          if (name && name.length > 2) {
+            existing.name = name;
+          }
+          rebuildIndexes();
+
+          try {
+            localStorage.setItem('cached_sheet_data', JSON.stringify(PRODUCTS_DATA));
+          } catch (e) {}
+
+          const updateItem = {
+            code: existing.code,
+            name: existing.name,
+            price: price,
+            barcode: existing.barcode || barcode || '',
+            isUpdate: true
+          };
+
+          try {
+            const pending = JSON.parse(localStorage.getItem('pending_sheet_additions') || '[]');
+            pending.unshift(updateItem);
+            localStorage.setItem('pending_sheet_additions', JSON.stringify(pending));
+          } catch (e) {}
+
+          playBeepSound();
+          vibrateDevice();
+          closeAddProductModal();
+          selectProduct(existing);
+
+          const webhookUrl = localStorage.getItem('google_apps_script_url') || (sheetWebhookInput ? sheetWebhookInput.value.trim() : '');
+          if (webhookUrl) {
+            showToast(`Updating ${existing.name} in Google Sheet...`, '');
+            fetch(webhookUrl, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updateItem)
+            }).then(() => {
+              showToast(`✅ Price updated to ${formatPrice(price)} in Google Sheet!`, 'success');
+            }).catch(err => {});
+          } else {
+            showSyncNoticeModal(updateItem, true);
+          }
           return;
         }
       }
@@ -2961,11 +3136,19 @@ Return ONLY a valid JSON object matching this schema:
 
     let lastSavedProduct = null;
 
-    function showSyncNoticeModal(item) {
+    function showSyncNoticeModal(item, isUpdate = false) {
       lastSavedProduct = item;
       const titleEl = document.getElementById('savedItemTitle');
+      const headerTitle = document.getElementById('syncNoticeHeader');
       if (titleEl) {
-        titleEl.textContent = `${item.name} (£${Number(item.price).toFixed(2)})`;
+        titleEl.textContent = `${item.name} (${formatPrice(item.price)})`;
+      }
+      if (headerTitle) {
+        headerTitle.textContent = isUpdate ? '✅ Price Updated in POS!' : '✅ Saved to POS Master List!';
+      }
+      const copyBtn = document.getElementById('copyRowBtn');
+      if (copyBtn) {
+        copyBtn.textContent = isUpdate ? '📋 Copy Row (To Update in Google Sheet)' : '📋 Copy Row (To Paste in Google Sheet)';
       }
       const m = document.getElementById('syncNoticeModal');
       if (m) m.style.display = 'flex';
@@ -3216,7 +3399,13 @@ Return ONLY a valid JSON object matching this schema:
             const existingNames = new Set(parsed.map(p => String(p.name).trim().toUpperCase()));
             for (let i = pending.length - 1; i >= 0; i--) {
               const item = pending[i];
-              if (!existingCodes.has(String(item.code).toUpperCase()) && !existingNames.has(String(item.name).trim().toUpperCase())) {
+              if (item.isUpdate) {
+                const target = parsed.find(p => String(p.code).toUpperCase() === String(item.code).toUpperCase() || (item.barcode && p.barcode === item.barcode));
+                if (target) {
+                  target.price = item.price;
+                  if (item.name) target.name = item.name;
+                }
+              } else if (!existingCodes.has(String(item.code).toUpperCase()) && !existingNames.has(String(item.name).trim().toUpperCase())) {
                 parsed.unshift(item);
               }
             }
