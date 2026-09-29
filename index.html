@@ -885,10 +885,9 @@
       </button>
     </div>
     <div class="header-pills">
-      <span class="pill" id="currencyToggle" title="Click to change currency">💷 Currency: £</span>
       <span class="pill pill-live" id="syncStatusPill" onclick="openSyncModal()" title="Google Sheet is connected">🟢 Live (27,050)</span>
       <span class="pill" id="quickSyncBtn" onclick="refreshGoogleSheetSync()" title="Refresh prices from Google Sheet">🔄 Sync</span>
-      <a href="https://docs.google.com/spreadsheets/d/1Y7g3UcoKQYykETgNg0eeJ7RyKmnpKAV4B8AZJZbM-gc/edit" target="_blank" class="pill" title="Open master Google Sheet" style="text-decoration: none; color: inherit;">📂 Sheet ↗</a>
+      <a href="https://docs.google.com/spreadsheets/d/1Y7g3UcoKQYykETgNg0eeJ7RyKmnpKAV4B8AZJZbM-gc/edit" target="_blank" class="pill" title="Open master Google Sheet" style="text-decoration: none; color: inherit;">📂 Product List ↗</a>
     </div>
   </header>
 
@@ -1517,18 +1516,22 @@
     updateCurrencyLabel();
     initGoogleSheetSync();
 
-    currencyToggle.addEventListener('click', () => {
-      const currencies = ['£', '₹', '$', '€'];
-      const nextIndex = (currencies.indexOf(currencySymbol) + 1) % currencies.length;
-      currencySymbol = currencies[nextIndex];
-      localStorage.setItem('pos_currency', currencySymbol);
-      updateCurrencyLabel();
-      if (selectedProduct) selectProduct(selectedProduct);
-      updateCart();
-    });
+    if (currencyToggle) {
+      currencyToggle.addEventListener('click', () => {
+        const currencies = ['£', '₹', '$', '€'];
+        const nextIndex = (currencies.indexOf(currencySymbol) + 1) % currencies.length;
+        currencySymbol = currencies[nextIndex];
+        localStorage.setItem('pos_currency', currencySymbol);
+        updateCurrencyLabel();
+        if (selectedProduct) selectProduct(selectedProduct);
+        updateCart();
+      });
+    }
 
     function updateCurrencyLabel() {
-      currencyToggle.textContent = '💷 Currency: ' + currencySymbol;
+      if (currencyToggle) {
+        currencyToggle.textContent = '💷 Currency: ' + currencySymbol;
+      }
     }
 
     function formatPrice(num) {
