@@ -103,7 +103,7 @@
     }
     .search-input {
       width: 100%;
-      padding: 14px 72px 14px 16px;
+      padding: 14px 44px 14px 16px;
       font-size: 16px;
       border: 2px solid var(--border);
       border-radius: 12px;
@@ -115,32 +115,9 @@
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
     }
-    .voice-search-btn {
-      position: absolute;
-      right: 38px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: #f3f4f6;
-      border: 1px solid #d1d5db;
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      transition: all 0.15s;
-    }
-    .voice-search-btn:active, .voice-search-btn.recording-pulse {
-      background: #ef4444;
-      color: white;
-      border-color: #dc2626;
-      transform: translateY(-50%) scale(1.1);
-    }
     .clear-search-btn {
       position: absolute;
-      right: 8px;
+      right: 12px;
       top: 50%;
       transform: translateY(-50%);
       background: #e5e7eb;
@@ -929,7 +906,6 @@
           autocorrect="off" 
           spellcheck="false"
         >
-        <button type="button" class="voice-search-btn" id="voiceSearchBtn" onclick="startVoiceSearch()" title="Voice Search (Speak product name)">🎙️</button>
         <button class="clear-search-btn" id="clearSearchBtn" onclick="clearSearch()">✕</button>
       </div>
       <button class="scan-btn" id="openScannerBtn" onclick="openCameraScanner()">
@@ -1789,45 +1765,6 @@
       clearSearchBtn.style.display = 'none';
       suggestionsDiv.style.display = 'none';
       searchInput.focus();
-    }
-
-    function startVoiceSearch() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        showToast('⚠️ Voice search not supported on this browser (use Chrome or Safari)', 'error');
-        return;
-      }
-      const btn = document.getElementById('voiceSearchBtn');
-      try {
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'en-GB';
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-
-        if (btn) btn.classList.add('recording-pulse');
-        showToast('🎙️ Listening... speak product name (e.g. "Jacme veg puffs")', '');
-
-        recognition.onresult = (event) => {
-          const transcript = event.results[0][0].transcript;
-          if (transcript) {
-            searchInput.value = transcript;
-            searchInput.dispatchEvent(new Event('input'));
-            showToast(`🎙️ Heard: "${transcript}"`, 'success');
-          }
-        };
-        recognition.onerror = (e) => {
-          console.warn('Speech recognition error:', e);
-          showToast('⚠️ Could not hear audio. Please try again.', 'error');
-        };
-        recognition.onend = () => {
-          if (btn) btn.classList.remove('recording-pulse');
-        };
-        recognition.start();
-      } catch (err) {
-        console.error('Voice search failed to start:', err);
-        if (btn) btn.classList.remove('recording-pulse');
-        showToast('⚠️ Microphone access error', 'error');
-      }
     }
 
     // Barcode & Code Helper
