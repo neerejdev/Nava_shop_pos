@@ -1043,20 +1043,27 @@
       </div>
     </div>
 
-    <!-- Cart Section -->
-    <div class="cart" id="cartDiv" style="display: none;">
-      <div class="cart-header">
-        <span>🛒 Cart Items</span>
-        <button class="cart-clear-btn" onclick="clearCart()">Clear All</button>
-      </div>
-      <div id="cartItems"></div>
-      <div class="cart-total-row">
-        <div class="cart-total-label">Total:</div>
-        <div class="cart-total-val" id="cartTotal">£0.00</div>
-      </div>
-      <button class="btn btn-primary" style="width: 100%; margin-top: 14px;" onclick="checkout()">Confirm Order</button>
-    </div>
+  </div>
 
+  <!-- Cart Items Modal (only shown when 'Show Cart' is clicked) -->
+  <div class="modal-overlay" id="cartModal" style="display: none;" onclick="if(event.target === this) closeCartModal()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>🛒 Cart Items (<span id="cartModalCount">0</span>)</h3>
+        <button class="close-modal-btn" onclick="closeCartModal()">✕</button>
+      </div>
+      <div style="padding: 16px; max-height: 60vh; overflow-y: auto;">
+        <div id="cartItems"></div>
+        <div class="cart-total-row">
+          <div class="cart-total-label">Total:</div>
+          <div class="cart-total-val" id="cartTotal">£0.00</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px; padding: 14px 16px; border-top: 1px solid var(--border); background: #f9fafb;">
+        <button type="button" class="btn btn-secondary" onclick="clearCart()" style="color: var(--danger); flex: 1;">🗑️ Clear All</button>
+        <button type="button" class="btn btn-primary" onclick="closeCartModal()" style="flex: 1.5;">Close</button>
+      </div>
+    </div>
   </div>
 
   <!-- Camera Barcode Scanner Modal -->
@@ -2073,13 +2080,21 @@
           addToCart();
         }
       }
-      const cartDiv = document.getElementById('cartDiv');
-      if (cartDiv) {
-        cartDiv.style.display = 'block';
-        cartDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      openCartModal();
+    }
+
+    function openCartModal() {
+      updateCart();
+      const cartModal = document.getElementById('cartModal');
+      if (cartModal) {
+        cartModal.style.display = 'flex';
       }
-      if (cart.length === 0) {
-        showToast('🛒 Cart is currently empty. Scan an item to start!', 'info');
+    }
+
+    function closeCartModal() {
+      const cartModal = document.getElementById('cartModal');
+      if (cartModal) {
+        cartModal.style.display = 'none';
       }
     }
 
@@ -2090,6 +2105,7 @@
     }
 
     function clearCart() {
+      if (cart.length === 0) return;
       if (confirm('Clear all items from cart?')) {
         cart = [];
         updateCart();
@@ -2097,21 +2113,24 @@
     }
 
     function updateCart() {
-      const cartDiv = document.getElementById('cartDiv');
       const cartItems = document.getElementById('cartItems');
       const cartTotal = document.getElementById('cartTotal');
       const cartCountBadge = document.getElementById('cartCountBadge');
+      const cartItemWord = document.getElementById('cartItemWord');
+      const cartModalCount = document.getElementById('cartModalCount');
       const headerCartPill = document.getElementById('headerCartPill');
       const headerCartCount = document.getElementById('headerCartCount');
 
       const totalItems = cart.reduce((sum, item) => sum + (item.isWeight ? 1 : item.qty), 0);
-      const cartItemWord = document.getElementById('cartItemWord');
 
       if (cartCountBadge) {
         cartCountBadge.textContent = totalItems;
       }
       if (cartItemWord) {
         cartItemWord.textContent = totalItems === 1 ? 'item' : 'items';
+      }
+      if (cartModalCount) {
+        cartModalCount.textContent = totalItems;
       }
       if (headerCartCount) {
         headerCartCount.textContent = totalItems;
@@ -2122,44 +2141,33 @@
 
       if (cart.length === 0) {
         if (cartItems) {
-          cartItems.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 14px;">🛒 Cart is empty. Scan an item to start!</div>';
+          cartItems.innerHTML = '<div style="text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 14px;">🛒 Cart is empty. Scan an item to add!</div>';
         }
         if (cartTotal) cartTotal.textContent = '£0.00';
         return;
       }
 
-      cartDiv.style.display = 'block';
-      cartItems.innerHTML = cart.map(item => `
-        <div class="cart-item">
-          <div>
-            <div class="cart-item-name">${escapeHtml(item.name)}</div>
-            <div class="cart-item-sub">
-              ${item.isWeight 
-                ? `${Number(item.weight).toFixed(3)} kg × ${formatPrice(item.price)}/kg = <strong>${formatPrice(item.subtotal)}</strong>` 
-                : `${item.qty} × ${formatPrice(item.price)} = <strong>${formatPrice(item.subtotal)}</strong>`
-              }
+      if (cartItems) {
+        cartItems.innerHTML = cart.map(item => `
+          <div class="cart-item">
+            <div style="flex: 1; min-width: 0; padding-right: 8px;">
+              <div class="cart-item-name">${escapeHtml(item.name)}</div>
+              <div class="cart-item-sub">
+                ${item.isWeight 
+                  ? `${Number(item.weight).toFixed(3)} kg × ${formatPrice(item.price)}/kg = <strong>${formatPrice(item.subtotal)}</strong>` 
+                  : `${item.qty} × ${formatPrice(item.price)} = <strong>${formatPrice(item.subtotal)}</strong>`
+                }
+              </div>
             </div>
+            <button class="cart-remove-btn" onclick="removeFromCart(${item.id})" title="Remove item">✕</button>
           </div>
-          <button class="cart-remove-btn" onclick="removeFromCart(${item.id})" title="Remove item">✕</button>
-        </div>
-      `).join('');
-
-      const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
-      cartTotal.textContent = formatPrice(Math.round(total * 100) / 100);
-    }
-
-    function checkout() {
-      if (cart.length === 0) {
-        showToast('⚠️ Cart is empty', 'error');
-        return;
+        `).join('');
       }
+
       const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
-      const totalItems = cart.reduce((sum, item) => sum + (item.isWeight ? 1 : item.qty), 0);
-      alert('✅ Order Confirmed!\n\nTotal: ' + formatPrice(total) + '\nItems: ' + totalItems);
-      cart = [];
-      updateCart();
-      const cartDiv = document.getElementById('cartDiv');
-      if (cartDiv) cartDiv.style.display = 'none';
+      if (cartTotal) {
+        cartTotal.textContent = formatPrice(Math.round(total * 100) / 100);
+      }
     }
 
     // ==========================================
