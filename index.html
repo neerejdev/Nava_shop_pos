@@ -512,25 +512,77 @@
     .btn-row {
       display: flex;
       gap: 10px;
-      margin-top: 10px;
+      margin-top: 14px;
       flex-wrap: wrap;
     }
     .btn {
       flex: 1;
-      min-width: 120px;
-      padding: 14px;
+      min-width: 100px;
+      padding: 13px 12px;
       border-radius: 10px;
       border: none;
-      font-size: 15px;
-      font-weight: 600;
+      font-size: 14px;
+      font-weight: 700;
       cursor: pointer;
       text-align: center;
       transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-decoration: none;
     }
     .btn-primary { background: var(--primary); color: white; }
-    .btn-primary:active { background: var(--primary-hover); }
-    .btn-secondary { background: #f3f4f6; color: #4b5563; }
-    .btn-scan-more { background: var(--success); color: white; }
+    .btn-primary:active { background: var(--primary-hover); transform: scale(0.98); }
+    .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid var(--border); }
+    .btn-secondary:active { background: #e5e7eb; transform: scale(0.98); }
+    .btn-scan-next {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      box-shadow: 0 3px 6px rgba(16, 185, 129, 0.25);
+      flex: 1.3;
+    }
+    .btn-scan-next:active { background: #059669; transform: scale(0.98); }
+    .btn-cart {
+      background: #eef2ff;
+      color: #4338ca;
+      border: 1px solid #c7d2fe;
+      flex: 1.1;
+    }
+    .btn-cart:active { background: #e0e7ff; transform: scale(0.98); }
+    .badge-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #4338ca;
+      color: white;
+      font-size: 11px;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 1px 7px;
+      min-width: 18px;
+      height: 18px;
+    }
+    .card-close-btn {
+      margin-left: auto;
+      background: #f3f4f6;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #6b7280;
+      font-size: 13px;
+      font-weight: 700;
+      transition: background 0.15s;
+    }
+    .card-close-btn:hover {
+      background: #fee2e2;
+      color: #dc2626;
+    }
 
     /* Cart Section */
     .cart {
@@ -888,6 +940,7 @@
       <span class="pill pill-live" id="syncStatusPill" onclick="openSyncModal()" title="Google Sheet is connected">🟢 Live (27,050)</span>
       <span class="pill" id="quickSyncBtn" onclick="refreshGoogleSheetSync()" title="Refresh prices from Google Sheet">🔄 Sync</span>
       <a href="https://docs.google.com/spreadsheets/d/1Y7g3UcoKQYykETgNg0eeJ7RyKmnpKAV4B8AZJZbM-gc/edit" target="_blank" class="pill" title="Open master Google Sheet" style="text-decoration: none; color: inherit;">📂 Product List ↗</a>
+      <span class="pill" id="headerCartPill" onclick="showCart()" style="cursor: pointer; display: none; background: #e0e7ff; color: #4338ca; font-weight: 700;" title="View items in cart">🛒 Cart (<span id="headerCartCount">0</span>)</span>
     </div>
   </header>
 
@@ -921,6 +974,7 @@
       <div class="product-badge-row">
         <span class="badge badge-code" id="cardCode"></span>
         <span class="badge badge-barcode" id="cardBarcode" style="display: none;"></span>
+        <button type="button" class="card-close-btn" onclick="clearSelection()" title="Dismiss without saving">✕</button>
       </div>
       <div class="product-name" id="cardName"></div>
       <div class="product-price-box">
@@ -977,9 +1031,9 @@
       </div>
 
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="addToCart()">+ Add to Cart</button>
-        <button class="btn btn-scan-more" id="cardScanMoreBtn" onclick="scanNextItem()">📷 Scan Next</button>
-        <button class="btn btn-secondary" onclick="clearSelection()">Close</button>
+        <button type="button" class="btn btn-scan-next" id="cardScanMoreBtn" onclick="scanNextItem()" title="Save item to cart and scan next barcode">📷 Scan Next</button>
+        <button type="button" class="btn btn-cart" id="cardShowCartBtn" onclick="showCart()" title="View items in cart">🛒 Show Cart (<span id="cartCountBadge">0</span>)</button>
+        <button type="button" class="btn btn-secondary" id="cardResetBtn" onclick="resetCurrentItem()" title="Reset quantity to 1">🔄 Reset</button>
       </div>
     </div>
 
@@ -1932,17 +1986,17 @@
     // Support Enter key inside weight or quantity input to immediately add to cart
     cardWeight.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        addToCart();
+        scanNextItem();
       }
     });
     cardQty.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        addToCart();
+        scanNextItem();
       }
     });
 
     function addToCart() {
-      if (!selectedProduct) return;
+      if (!selectedProduct) return false;
 
       if (currentPricingMode === 'weight') {
         const rawVal = cardWeight.value.trim();
@@ -1950,7 +2004,7 @@
         if (!rawVal || isNaN(weight) || weight <= 0) {
           showToast('⚠️ Please enter weight (e.g. .563 or 1.2)', 'error');
           cardWeight.focus();
-          return;
+          return false;
         }
         const subtotal = Math.round(weight * selectedProduct.price * 100) / 100;
         cart.push({
@@ -1963,11 +2017,10 @@
         });
         showToast(`✓ Added ${selectedProduct.name} (${weight.toFixed(3)} kg)`, 'success');
       } else {
-        const qty = parseFloat(cardQty.value);
-        if (qty <= 0 || isNaN(qty)) {
-          showToast('⚠️ Please enter a valid quantity', 'error');
-          cardQty.focus();
-          return;
+        let qty = parseInt(cardQty.value, 10);
+        if (isNaN(qty) || qty <= 0) {
+          qty = 1;
+          cardQty.value = '1';
         }
         const existing = cart.find(item => !item.isWeight && item.code === selectedProduct.code);
         if (existing) {
@@ -1982,16 +2035,46 @@
             subtotal: Math.round(selectedProduct.price * qty * 100) / 100
           });
         }
-        showToast(`✓ Added ${selectedProduct.name}`, 'success');
+        showToast(`✓ Added ${selectedProduct.name}${qty > 1 ? ' (x' + qty + ')' : ''}`, 'success');
       }
 
       clearSelection();
       updateCart();
+      return true;
     }
 
     function scanNextItem() {
-      clearSelection();
+      if (selectedProduct) {
+        const saved = addToCart();
+        if (!saved) return;
+      }
       openCameraScanner();
+    }
+
+    function resetCurrentItem() {
+      if (!selectedProduct) return;
+      cardQty.value = '1';
+      if (currentPricingMode === 'weight') {
+        cardWeight.value = '';
+      }
+      calculateCurrentTotal();
+      showToast('🔄 Reset quantity to 1', 'info');
+    }
+
+    function showCart() {
+      if (selectedProduct) {
+        if (currentPricingMode === 'units' || (currentPricingMode === 'weight' && parseFloat(cardWeight.value) > 0)) {
+          addToCart();
+        }
+      }
+      const cartDiv = document.getElementById('cartDiv');
+      if (cartDiv) {
+        cartDiv.style.display = 'block';
+        cartDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      if (cart.length === 0) {
+        showToast('🛒 Cart is currently empty. Scan an item to start!', 'info');
+      }
     }
 
     // Cart Management
@@ -2011,9 +2094,27 @@
       const cartDiv = document.getElementById('cartDiv');
       const cartItems = document.getElementById('cartItems');
       const cartTotal = document.getElementById('cartTotal');
+      const cartCountBadge = document.getElementById('cartCountBadge');
+      const headerCartPill = document.getElementById('headerCartPill');
+      const headerCartCount = document.getElementById('headerCartCount');
+
+      const totalItems = cart.reduce((sum, item) => sum + (item.isWeight ? 1 : item.qty), 0);
+
+      if (cartCountBadge) {
+        cartCountBadge.textContent = totalItems;
+      }
+      if (headerCartCount) {
+        headerCartCount.textContent = totalItems;
+      }
+      if (headerCartPill) {
+        headerCartPill.style.display = cart.length > 0 ? 'inline-flex' : 'none';
+      }
 
       if (cart.length === 0) {
-        cartDiv.style.display = 'none';
+        if (cartItems) {
+          cartItems.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 14px;">🛒 Cart is empty. Scan an item to start!</div>';
+        }
+        if (cartTotal) cartTotal.textContent = '£0.00';
         return;
       }
 
@@ -2029,7 +2130,7 @@
               }
             </div>
           </div>
-          <button class="cart-remove-btn" onclick="removeFromCart(${item.id})">✕</button>
+          <button class="cart-remove-btn" onclick="removeFromCart(${item.id})" title="Remove item">✕</button>
         </div>
       `).join('');
 
@@ -2038,16 +2139,28 @@
     }
 
     function checkout() {
+      if (cart.length === 0) {
+        showToast('⚠️ Cart is empty', 'error');
+        return;
+      }
       const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
-      alert('✅ Order Confirmed!\n\nTotal: ' + formatPrice(total) + '\nItems: ' + cart.length);
+      const totalItems = cart.reduce((sum, item) => sum + (item.isWeight ? 1 : item.qty), 0);
+      alert('✅ Order Confirmed!\n\nTotal: ' + formatPrice(total) + '\nItems: ' + totalItems);
       cart = [];
       updateCart();
+      const cartDiv = document.getElementById('cartDiv');
+      if (cartDiv) cartDiv.style.display = 'none';
     }
 
     // ==========================================
     // CAMERA BARCODE SCANNER LOGIC (html5-qrcode)
     // ==========================================
     async function openCameraScanner() {
+      if (selectedProduct) {
+        if (currentPricingMode === 'units' || (currentPricingMode === 'weight' && parseFloat(cardWeight.value) > 0)) {
+          addToCart();
+        }
+      }
       scannerModal.style.display = 'flex';
       clearSelection();
 
