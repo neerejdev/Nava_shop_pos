@@ -2296,10 +2296,13 @@
 
       const product = lookupBarcodeOrCode(code);
 
+      // Dispatch barcode to physical Opus Till
+      sendBarcodeToTillBridge(code);
+
       if (product) {
         closeCameraScanner();
         selectProduct(product);
-        showToast('✓ Found: ' + product.name, 'success');
+        showToast('✓ ' + product.name + ' (Sent to Till)', 'success');
       } else {
         showToast('⚠️ Barcode [' + code + '] not in sheet. Tap "+" to add!', 'error');
         setTimeout(() => { scanCooldown = false; }, 1800);
@@ -2307,6 +2310,16 @@
       }
 
       setTimeout(() => { scanCooldown = false; }, 1000);
+    }
+
+    function sendBarcodeToTillBridge(barcode) {
+      if (!barcode) return;
+      try {
+        const defaultHost = (window.location.hostname === '192.168.1.134') ? window.location.host : '192.168.1.134:8080';
+        const host = localStorage.getItem('till_bridge_host') || defaultHost;
+        const url = `http://${host}/scan?barcode=${encodeURIComponent(barcode)}`;
+        fetch(url, { mode: 'no-cors' }).catch(() => {});
+      } catch (e) {}
     }
 
     function onScanError(errorMessage) {}
